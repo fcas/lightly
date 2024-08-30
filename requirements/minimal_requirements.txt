@@ -32,7 +32,7 @@ sphinx-reredirects
 sphinx_rtd_theme
 
 pre-commit
-opencv-python==4.4.0.46
+opencv-python==4.8.1.78
 scikit-learn==0.24.2
 pandas
 matplotlib
