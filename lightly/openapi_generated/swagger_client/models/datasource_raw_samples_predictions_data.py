@@ -20,7 +20,12 @@ import json
 
 
 from typing import List
-from pydantic import Extra,  BaseModel, Field, StrictBool, StrictStr, conlist
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field, StrictBool, StrictStr, conlist
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field, StrictBool, StrictStr, conlist
 from lightly.openapi_generated.swagger_client.models.datasource_raw_samples_predictions_data_row import DatasourceRawSamplesPredictionsDataRow
 
 class DatasourceRawSamplesPredictionsData(BaseModel):
@@ -37,7 +42,7 @@ class DatasourceRawSamplesPredictionsData(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     def to_str(self, by_alias: bool = False) -> str:
         """Returns the string representation of the model"""

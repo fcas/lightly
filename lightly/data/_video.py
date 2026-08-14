@@ -1,4 +1,4 @@
-""" Video Dataset """
+"""Video Dataset"""
 
 # Copyright (c) 2020. Lightly AG and its affiliates.
 # All Rights Reserved
@@ -25,8 +25,18 @@ try:
 except ImportError:
     AV_AVAILABLE = False
 
-if io._HAS_VIDEO_OPT:
+
+TORCHVISION_VIDEO_READER_AVAILABLE = getattr(io, "_HAS_VIDEO_OPT", False) and hasattr(
+    io, "VideoReader"
+)
+if TORCHVISION_VIDEO_READER_AVAILABLE:
     torchvision.set_video_backend("video_reader")
+
+VIDEO_SUPPORT_AVAILABLE = (
+    (AV_AVAILABLE or TORCHVISION_VIDEO_READER_AVAILABLE)
+    and hasattr(io, "read_video")
+    and hasattr(io, "read_video_timestamps")
+)
 
 
 class VideoError(Exception):
@@ -118,10 +128,10 @@ class VideoLoader(threading.local):
         >>> from torchvision import io
         >>>
         >>> # get timestamps
-        >>> ts, fps = io.read_video_timestamps('myvideo.mp4', pts_unit = 'sec')
+        >>> ts, fps = io.read_video_timestamps("myvideo.mp4", pts_unit="sec")
         >>>
         >>> # create a VideoLoader
-        >>> video_loader = VideoLoader('myvideo.mp4', ts)
+        >>> video_loader = VideoLoader("myvideo.mp4", ts)
         >>>
         >>> # get frame at specific timestamp
         >>> frame = video_loader.read_frame(ts[21])
@@ -137,6 +147,11 @@ class VideoLoader(threading.local):
         backend: str = "video_reader",
         eps: float = 1e-6,
     ):
+        if not VIDEO_SUPPORT_AVAILABLE:
+            raise RuntimeError(
+                "Video loading is not available. Please make sure you have "
+                "torchvision <= 0.25 installed"
+            )
         self.path = path
         self.timestamps = timestamps
         self.current_index = None
@@ -144,9 +159,7 @@ class VideoLoader(threading.local):
         self.backend = backend
         self.eps = eps
 
-        has_video_reader = io._HAS_VIDEO_OPT and hasattr(io, "VideoReader")
-
-        if has_video_reader and self.backend == "video_reader":
+        if TORCHVISION_VIDEO_READER_AVAILABLE and self.backend == "video_reader":
             self.reader = io.VideoReader(path=self.path)
         else:
             self.reader = None
@@ -269,7 +282,7 @@ class VideoLoader(threading.local):
                 warnings.warn(
                     f"Loaded wrong frame in {self.path}! Tried to load frame "
                     f"with index {index} and timestamp {float(timestamp)} but "
-                    f'could only find frame with timestamp {frame_info["pts"]}.'
+                    f"could only find frame with timestamp {frame_info['pts']}."
                 )
 
             # Make sure we have the tensor in correct shape (we want H x W x C)
@@ -302,137 +315,6 @@ class VideoLoader(threading.local):
         # convert to PIL image
         image = Image.fromarray(frame.numpy())
         return image
-
-
-class _TimestampFpsFromVideosDataset(Dataset):
-    def __init__(self, video_instances: List[str], pts_unit: str):
-        self.video_instances = video_instances
-        self.pts_unit = pts_unit
-
-    def __len__(self):
-        return len(self.video_instances)
-
-    def __getitem__(self, index):
-        instance = self.video_instances[index]
-        ts, fps = io.read_video_timestamps(instance, pts_unit=self.pts_unit)
-        return ts, fps
-
-
-def _make_dataset(
-    directory,
-    extensions=None,
-    is_valid_file=None,
-    pts_unit="sec",
-    tqdm_args=None,
-    num_workers: int = 0,
-):
-    """Returns a list of all video files, timestamps, and offsets.
-
-    Args:
-        directory:
-            Root directory path (should not contain subdirectories).
-        extensions:
-            Tuple of valid extensions.
-        is_valid_file:
-            Used to find valid files.
-        pts_unit:
-            Unit of the timestamps.
-        tqdm_args:
-            arguments to pass to tqdm
-        num_workers:
-            number of workers to use for multithreading
-
-    Returns:
-        A list of video files, timestamps, frame offsets, and fps.
-
-    """
-
-    if tqdm_args is None:
-        tqdm_args = {}
-    if extensions is None:
-        if is_valid_file is None:
-            ValueError("Both extensions and is_valid_file cannot be None")
-        else:
-            _is_valid_file = is_valid_file
-    else:
-
-        def is_valid_file_extension(filepath):
-            return filepath.lower().endswith(extensions)
-
-        if is_valid_file is None:
-            _is_valid_file = is_valid_file_extension
-        else:
-
-            def _is_valid_file(filepath):
-                return is_valid_file_extension(filepath) and is_valid_file(filepath)
-
-    # find all video instances (no subdirectories)
-    video_instances = []
-
-    def on_error(error):
-        raise error
-
-    for root, _, files in os.walk(directory, onerror=on_error):
-        for fname in files:
-            # skip invalid files
-            if not _is_valid_file(os.path.join(root, fname)):
-                continue
-
-            # keep track of valid files
-            path = os.path.join(root, fname)
-            video_instances.append(path)
-
-    # define loader to get the timestamps
-    num_workers = min(num_workers, len(video_instances))
-    if len(video_instances) == 1:
-        num_workers = 0
-    loader = DataLoader(
-        _TimestampFpsFromVideosDataset(video_instances, pts_unit=pts_unit),
-        num_workers=num_workers,
-        batch_size=None,
-        shuffle=False,
-    )
-
-    # actually load the data
-    tqdm_args = dict(tqdm_args)
-    tqdm_args.setdefault("unit", " video")
-    tqdm_args.setdefault("desc", "Counting frames in videos")
-    timestamps_fpss = list(tqdm(loader, **tqdm_args))
-    timestamps, fpss = zip(*timestamps_fpss)
-
-    # get frame offsets
-    frame_counts = [len(ts) for ts in timestamps]
-    offsets = [0] + list(np.cumsum(frame_counts[:-1]))
-
-    return video_instances, timestamps, offsets, fpss
-
-
-def _find_non_increasing_timestamps(timestamps: List[Fraction]) -> List[bool]:
-    """Finds all non-increasing timestamps.
-
-    Arguments:
-        timestamps:
-            Video frame timestamps.
-
-    Returns:
-        A boolean for each input timestamp which is True if the timestamp is
-        non-increasing and False otherwise.
-
-    """
-    if len(timestamps) == 0:
-        return []
-    is_non_increasing = np.zeros(
-        shape=len(timestamps),
-        dtype=bool,
-    )
-    max_timestamp = timestamps[0] - 1
-    for i, timestamp in enumerate(timestamps):
-        if timestamp > max_timestamp:
-            max_timestamp = timestamp
-        else:
-            is_non_increasing[i] = True
-
-    return list(is_non_increasing)
 
 
 class VideoDataset(datasets.VisionDataset):
@@ -470,6 +352,12 @@ class VideoDataset(datasets.VisionDataset):
         tqdm_args: Dict[str, Any] = None,
         num_workers: int = 0,
     ):
+        if not VIDEO_SUPPORT_AVAILABLE:
+            raise RuntimeError(
+                "Video loading is not available. Please make sure you have "
+                "torchvision <= 0.25 installed"
+            )
+
         super(VideoDataset, self).__init__(
             root, transform=transform, target_transform=target_transform
         )
@@ -518,7 +406,7 @@ class VideoDataset(datasets.VisionDataset):
         self._video_index = None
 
         # Keep unique reference of dataloader worker. We need this to avoid
-        # accidentaly sharing VideoLoader instances between workers.
+        # accidentally sharing VideoLoader instances between workers.
         self._worker_ref = None
 
         # Lock to prevent multiple threads creating a new VideoLoader at the
@@ -613,10 +501,8 @@ class VideoDataset(datasets.VisionDataset):
         The filename is created from the video filename, the frame number, and
         the video format. The frame number will be zero padded to make sure
         all filenames have the same length and can easily be sorted.
-        E.g. when retrieving a sample from the video
-        `my_video.mp4` at frame 153, the filename will be:
-
-        >>> my_video-153-mp4.png
+        For example, when retrieving a sample from the video ``my_video.mp4``
+        at frame 153, the filename will be ``my_video-153-mp4.png``.
 
         Args:
             index:
@@ -732,3 +618,144 @@ class VideoDataset(datasets.VisionDataset):
                 self._video_index = video_index
 
             return self._video_loader
+
+
+class _TimestampFpsFromVideosDataset(Dataset):
+    def __init__(self, video_instances: List[str], pts_unit: str):
+        if not VIDEO_SUPPORT_AVAILABLE:
+            raise RuntimeError(
+                "Video loading is not available. Please make sure you have "
+                "torchvision <= 0.25 installed"
+            )
+        self.video_instances = video_instances
+        self.pts_unit = pts_unit
+
+    def __len__(self):
+        return len(self.video_instances)
+
+    def __getitem__(self, index):
+        instance = self.video_instances[index]
+        ts, fps = io.read_video_timestamps(instance, pts_unit=self.pts_unit)
+        return ts, fps
+
+
+def _make_dataset(
+    directory,
+    extensions=None,
+    is_valid_file=None,
+    pts_unit="sec",
+    tqdm_args=None,
+    num_workers: int = 0,
+):
+    """Returns a list of all video files, timestamps, and offsets.
+
+    Args:
+        directory:
+            Root directory path (should not contain subdirectories).
+        extensions:
+            Tuple of valid extensions.
+        is_valid_file:
+            Used to find valid files.
+        pts_unit:
+            Unit of the timestamps.
+        tqdm_args:
+            arguments to pass to tqdm
+        num_workers:
+            number of workers to use for multithreading
+
+    Returns:
+        A list of video files, timestamps, frame offsets, and fps.
+
+    """
+    if not VIDEO_SUPPORT_AVAILABLE:
+        raise RuntimeError(
+            "Video loading is not available. Please make sure you have "
+            "torchvision <= 0.25 installed"
+        )
+
+    if tqdm_args is None:
+        tqdm_args = {}
+    if extensions is None:
+        if is_valid_file is None:
+            ValueError("Both extensions and is_valid_file cannot be None")
+        else:
+            _is_valid_file = is_valid_file
+    else:
+
+        def is_valid_file_extension(filepath):
+            return filepath.lower().endswith(extensions)
+
+        if is_valid_file is None:
+            _is_valid_file = is_valid_file_extension
+        else:
+
+            def _is_valid_file(filepath):
+                return is_valid_file_extension(filepath) and is_valid_file(filepath)
+
+    # find all video instances (no subdirectories)
+    video_instances = []
+
+    def on_error(error):
+        raise error
+
+    for root, _, files in os.walk(directory, onerror=on_error):
+        for fname in files:
+            # skip invalid files
+            if not _is_valid_file(os.path.join(root, fname)):
+                continue
+
+            # keep track of valid files
+            path = os.path.join(root, fname)
+            video_instances.append(path)
+
+    # define loader to get the timestamps
+    num_workers = min(num_workers, len(video_instances))
+    if len(video_instances) == 1:
+        num_workers = 0
+    loader = DataLoader(
+        _TimestampFpsFromVideosDataset(video_instances, pts_unit=pts_unit),
+        num_workers=num_workers,
+        batch_size=None,
+        shuffle=False,
+    )
+
+    # actually load the data
+    tqdm_args = dict(tqdm_args)
+    tqdm_args.setdefault("unit", " video")
+    tqdm_args.setdefault("desc", "Counting frames in videos")
+    timestamps_fpss = list(tqdm(loader, **tqdm_args))
+    timestamps, fpss = zip(*timestamps_fpss)
+
+    # get frame offsets
+    frame_counts = [len(ts) for ts in timestamps]
+    offsets = [0] + list(np.cumsum(frame_counts[:-1]))
+
+    return video_instances, timestamps, offsets, fpss
+
+
+def _find_non_increasing_timestamps(timestamps: List[Fraction]) -> List[bool]:
+    """Finds all non-increasing timestamps.
+
+    Arguments:
+        timestamps:
+            Video frame timestamps.
+
+    Returns:
+        A boolean for each input timestamp which is True if the timestamp is
+        non-increasing and False otherwise.
+
+    """
+    if len(timestamps) == 0:
+        return []
+    is_non_increasing = np.zeros(
+        shape=len(timestamps),
+        dtype=bool,
+    )
+    max_timestamp = timestamps[0] - 1
+    for i, timestamp in enumerate(timestamps):
+        if timestamp > max_timestamp:
+            max_timestamp = timestamp
+        else:
+            is_non_increasing[i] = True
+
+    return list(is_non_increasing)

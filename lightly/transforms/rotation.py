@@ -1,13 +1,14 @@
 # Copyright (c) 2020. Lightly AG and its affiliates.
 # All Rights Reserved
 
-from typing import Tuple, Union
+from typing import Callable, Tuple, Union
 
 import numpy as np
-import torchvision.transforms as T
 from PIL.Image import Image
 from torch import Tensor
-from torchvision.transforms import functional as TF
+
+from lightly.transforms.torchvision_v2_compatibility import functional as F
+from lightly.transforms.torchvision_v2_compatibility import torchvision_transforms as T
 
 
 class RandomRotate:
@@ -47,7 +48,7 @@ class RandomRotate:
         """
         prob = np.random.random_sample()
         if prob < self.prob:
-            image = TF.rotate(image, self.angle)
+            image = F.rotate(image, self.angle)
         return image
 
 
@@ -65,7 +66,9 @@ class RandomRotateDegrees:
     """
 
     def __init__(self, prob: float, degrees: Union[float, Tuple[float, float]]):
-        self.transform = T.RandomApply([T.RandomRotation(degrees=degrees)], p=prob)
+        self.transform: Callable[[Union[Image, Tensor]], Union[Image, Tensor]] = (
+            T.RandomApply([T.RandomRotation(degrees=degrees)], p=prob)
+        )
 
     def __call__(self, image: Union[Image, Tensor]) -> Union[Image, Tensor]:
         """Rotates the images with a given probability.

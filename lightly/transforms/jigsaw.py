@@ -1,14 +1,18 @@
 # Copyright (c) 2021. Lightly AG and its affiliates.
 # All Rights Reserved
 
-from typing import List
+from typing import TYPE_CHECKING, Callable, List
 
 import numpy as np
 import torch
 from PIL import Image as Image
 from PIL.Image import Image as PILImage
 from torch import Tensor
-from torchvision import transforms as T
+
+from lightly.transforms.torchvision_v2_compatibility import torchvision_transforms as T
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 class Jigsaw(object):
@@ -31,7 +35,9 @@ class Jigsaw(object):
     Examples:
         >>> from lightly.transforms import Jigsaw
         >>>
-        >>> jigsaw_crop = Jigsaw(n_grid=3, img_size=255, crop_size=64, transform=transforms.ToTensor())
+        >>> jigsaw_crop = Jigsaw(
+        ...     n_grid=3, img_size=255, crop_size=64, transform=T.ToTensor()
+        ... )
         >>>
         >>> # img is a PIL image
         >>> crops = jigsaw_crops(img)
@@ -49,7 +55,7 @@ class Jigsaw(object):
         self.crop_size = crop_size
         self.grid_size = int(img_size / self.n_grid)
         self.side = self.grid_size - self.crop_size
-        self.transform = transform
+        self.transform: Callable[[PILImage], Tensor] = transform
 
         yy, xx = np.meshgrid(np.arange(n_grid), np.arange(n_grid))
         self.yy = np.reshape(yy * self.grid_size, (n_grid * n_grid,))
@@ -66,11 +72,11 @@ class Jigsaw(object):
         """
         r_x = np.random.randint(0, self.side + 1, self.n_grid * self.n_grid)
         r_y = np.random.randint(0, self.side + 1, self.n_grid * self.n_grid)
-        img = np.asarray(img, np.uint8)
-        crops: List[PILImage] = []
+        img_arr = np.asarray(img, np.uint8)
+        crops: List[NDArray[np.uint8]] = []
         for i in range(self.n_grid * self.n_grid):
             crops.append(
-                img[
+                img_arr[
                     self.xx[i] + r_x[i] : self.xx[i] + r_x[i] + self.crop_size,
                     self.yy[i] + r_y[i] : self.yy[i] + r_y[i] + self.crop_size,
                     :,

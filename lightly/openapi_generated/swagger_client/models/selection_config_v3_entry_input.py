@@ -20,7 +20,12 @@ import json
 
 
 from typing import List, Optional
-from pydantic import Extra,  BaseModel, Field, StrictInt, conlist, constr, validator
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field, StrictInt, conlist, constr, validator
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field, StrictInt, conlist, constr, validator
 from lightly.openapi_generated.swagger_client.models.selection_input_predictions_name import SelectionInputPredictionsName
 from lightly.openapi_generated.swagger_client.models.selection_input_type import SelectionInputType
 
@@ -29,7 +34,7 @@ class SelectionConfigV3EntryInput(BaseModel):
     SelectionConfigV3EntryInput
     """
     type: SelectionInputType = Field(...)
-    task: Optional[constr(strict=True)] = Field(None, description="Since we sometimes stitch together SelectionInputTask+ActiveLearningScoreType, they need to follow the same specs of ActiveLearningScoreType. However, this can be an empty string due to internal logic. ")
+    task: Optional[constr(strict=True)] = Field(None, description="Since we sometimes stitch together SelectionInputTask+ActiveLearningScoreType, they need to follow the same specs of ActiveLearningScoreType. However, this can be an empty string due to internal logic (no minLength). Also v2config.filespecs.ts has this pattern for predictionTaskJSONSchema as well. ")
     score: Optional[constr(strict=True, min_length=1)] = Field(None, description="Type of active learning score")
     key: Optional[constr(strict=True, min_length=1)] = None
     name: Optional[SelectionInputPredictionsName] = None
@@ -84,7 +89,7 @@ class SelectionConfigV3EntryInput(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     def to_str(self, by_alias: bool = False) -> str:
         """Returns the string representation of the model"""

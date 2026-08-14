@@ -16,11 +16,20 @@
 import re  # noqa: F401
 import io
 import warnings
-
-from pydantic import validate_arguments, ValidationError
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import validate_arguments, ValidationError
+except ImportError:
+    # Pydantic v1
+    from pydantic import validate_arguments, ValidationError
 from typing_extensions import Annotated
 
-from pydantic import Field, constr, validator
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import Field, constr, validator
+except ImportError:
+    # Pydantic v1
+    from pydantic import Field, constr, validator
 
 from typing import List
 
@@ -50,7 +59,7 @@ class MetaDataConfigurationsApi(object):
 
     @validate_arguments
     def create_meta_data_configuration(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], configuration_set_request : ConfigurationSetRequest, **kwargs) -> CreateEntityResponse:  # noqa: E501
-        """create_meta_data_configuration  # noqa: E501
+        """Create metadata configuration  # noqa: E501
 
         Create a new metadata configuration  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -81,7 +90,7 @@ class MetaDataConfigurationsApi(object):
 
     @validate_arguments
     def create_meta_data_configuration_with_http_info(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], configuration_set_request : ConfigurationSetRequest, **kwargs) -> ApiResponse:  # noqa: E501
-        """create_meta_data_configuration  # noqa: E501
+        """Create metadata configuration  # noqa: E501
 
         Create a new metadata configuration  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -208,7 +217,7 @@ class MetaDataConfigurationsApi(object):
 
     @validate_arguments
     def get_meta_data_configuration_by_id(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], configuration_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the metadata configuration")], **kwargs) -> ConfigurationData:  # noqa: E501
-        """get_meta_data_configuration_by_id  # noqa: E501
+        """Get metadata configuration by id  # noqa: E501
 
         Get a specific metadata configuration  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -239,7 +248,7 @@ class MetaDataConfigurationsApi(object):
 
     @validate_arguments
     def get_meta_data_configuration_by_id_with_http_info(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], configuration_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the metadata configuration")], **kwargs) -> ApiResponse:  # noqa: E501
-        """get_meta_data_configuration_by_id  # noqa: E501
+        """Get metadata configuration by id  # noqa: E501
 
         Get a specific metadata configuration  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -359,7 +368,7 @@ class MetaDataConfigurationsApi(object):
 
     @validate_arguments
     def get_meta_data_configurations(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], **kwargs) -> List[ConfigurationData]:  # noqa: E501
-        """get_meta_data_configurations  # noqa: E501
+        """Get metadata configurations  # noqa: E501
 
         Get the all metadata configurations that exist for a user  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -388,7 +397,7 @@ class MetaDataConfigurationsApi(object):
 
     @validate_arguments
     def get_meta_data_configurations_with_http_info(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], **kwargs) -> ApiResponse:  # noqa: E501
-        """get_meta_data_configurations  # noqa: E501
+        """Get metadata configurations  # noqa: E501
 
         Get the all metadata configurations that exist for a user  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -502,7 +511,7 @@ class MetaDataConfigurationsApi(object):
 
     @validate_arguments
     def update_meta_data_configuration_by_id(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], configuration_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the metadata configuration")], configuration_set_request : ConfigurationSetRequest, **kwargs) -> None:  # noqa: E501
-        """update_meta_data_configuration_by_id  # noqa: E501
+        """Update metadata configuration by id  # noqa: E501
 
         update a specific metadata configuration  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -535,7 +544,7 @@ class MetaDataConfigurationsApi(object):
 
     @validate_arguments
     def update_meta_data_configuration_by_id_with_http_info(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], configuration_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the metadata configuration")], configuration_set_request : ConfigurationSetRequest, **kwargs) -> ApiResponse:  # noqa: E501
-        """update_meta_data_configuration_by_id  # noqa: E501
+        """Update metadata configuration by id  # noqa: E501
 
         update a specific metadata configuration  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an

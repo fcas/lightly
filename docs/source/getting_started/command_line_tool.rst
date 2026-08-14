@@ -3,7 +3,7 @@
 Command-line tool
 =================
 
-The Lightly SSL framework provides you with a command-line interface (CLI) to train 
+The Lightly\ **SSL** framework provides you with a command-line interface (CLI) to train 
 self-supervised models and create embeddings without having to write a single 
 line of code.
 
@@ -24,16 +24,16 @@ the CLI.
     </div>
 
 
-Check the installation of Lightly SSL
+Check the installation of LightlySSL
 -------------------------------------
-To see if the Lightly SSL command-line tool was installed correctly, you can run the
-following command which will print the version of the installed Lightly SSL package:
+To see if the Lightly\ **SSL** command-line tool was installed correctly, you can run the
+following command which will print the version of the installed Lightly\ **SSL** package:
 
 .. code-block:: bash
 
     lightly-version
 
-If Lightly SSL was installed correctly, you should see something like this:
+If Lightly\ **SSL** was installed correctly, you should see something like this:
 
 .. code-block:: bash
 
@@ -79,7 +79,7 @@ An example for the label names .yaml file:
     names: [cat, dog]
 
 You can use the output of the lightly-crop command as the *input_dir* for your
-lightly-train command.
+lightly-ssl-train command.
 
 Training and Embedding in a Go – Magic
 ---------------------------------------------------
@@ -118,23 +118,23 @@ You can use the following command to train a model and save the checkpoint:
 .. code-block:: bash
 
     # train a model using default parameters
-    lightly-train input_dir=cat
+    lightly-ssl-train input_dir=cat
 
     # train a model for 5 epochs
-    lightly-train input_dir=cat trainer.max_epochs=5
+    lightly-ssl-train input_dir=cat trainer.max_epochs=5
 
     # continue training from a checkpoint for another 10 epochs
-    lightly-train input_dir=cat trainer.max_epochs=10 checkpoint=mycheckpoint.ckpt
+    lightly-ssl-train input_dir=cat trainer.max_epochs=10 checkpoint=mycheckpoint.ckpt
 
     # continue training from the last checkpoint
-    lightly-train input_dir=cat trainer.max_epochs=10 \
+    lightly-ssl-train input_dir=cat trainer.max_epochs=10 \
                   checkpoint=$LIGHTLY_LAST_CHECKPOINT_PATH
 
     # train with multiple gpus
     # the total batch size will be trainer.gpus * loader.batch_size
-    lightly-train input_dir=data_dir trainer.gpus=2
+    lightly-ssl-train input_dir=data_dir trainer.gpus=2
 
-The path to the latest checkpoint you created using the `lightly-train` command
+The path to the latest checkpoint you created using the `lightly-ssl-train` command
 will be saved under an environment variable named LIGHTLY_LAST_CHECKPOINT_PATH.
 This can be useful for continuing training or for creating embeddings from
 a checkpoint.
@@ -143,7 +143,7 @@ For a full list of supported arguments run
 
 .. code-block:: bash
     
-    lightly-train --help
+    lightly-ssl-train --help
 
 
 You can get an overview of the various CLI parameters you can set in 
@@ -158,7 +158,7 @@ Once you have a trained model checkpoint, you can create an embedding of a datas
 
 .. code-block:: bash
 
-    # use pre-trained models provided by Lighly
+    # use pre-trained models provided by Lightly
     lightly-embed input_dir=cat
 
     # use custom checkpoint
@@ -222,14 +222,14 @@ you can use the following:
     # equivalent breakdown into single commands
 
     # train the embedding model
-    lightly-train input_dir=data_dir
+    lightly-ssl-train input_dir=data_dir
     # embed the images with the embedding model just trained
     lightly-embed input_dir=data_dir checkpoint=$LIGHTLY_LAST_CHECKPOINT_PATH
 
 
 
 
-    
+
 
 
 

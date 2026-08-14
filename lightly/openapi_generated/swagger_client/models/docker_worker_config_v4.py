@@ -20,7 +20,12 @@ import json
 
 
 from typing import Optional
-from pydantic import Extra,  BaseModel, Field
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field
 from lightly.openapi_generated.swagger_client.models.docker_worker_config_v3_lightly import DockerWorkerConfigV3Lightly
 from lightly.openapi_generated.swagger_client.models.docker_worker_config_v4_docker import DockerWorkerConfigV4Docker
 from lightly.openapi_generated.swagger_client.models.docker_worker_type import DockerWorkerType
@@ -41,7 +46,7 @@ class DockerWorkerConfigV4(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     def to_str(self, by_alias: bool = False) -> str:
         """Returns the string representation of the model"""

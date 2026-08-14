@@ -31,9 +31,9 @@ class DINO(LightningModule):
         resnet = resnet50()
         resnet.fc = Identity()  # Ignore classification head
         self.backbone = resnet
-        self.projection_head = DINOProjectionHead(freeze_last_layer=1)
+        self.projection_head = DINOProjectionHead()
         self.student_backbone = copy.deepcopy(self.backbone)
-        self.student_projection_head = DINOProjectionHead()
+        self.student_projection_head = DINOProjectionHead(freeze_last_layer=1)
         self.criterion = DINOLoss()
 
         self.online_classifier = OnlineLinearClassifier(num_classes=num_classes)
@@ -80,7 +80,7 @@ class DINO(LightningModule):
         loss = self.criterion(
             teacher_out=teacher_projections.chunk(2),
             student_out=student_projections.chunk(len(views)),
-            epoch=self.current_epoch,
+            teacher_temp=0.04,  # for benchmarking we use a constant temperature of 0.04 following the settings in https://github.com/facebookresearch/dino?tab=readme-ov-file#resnet-50-and-other-convnets-trainings
         )
         self.log_dict(
             {"train_loss": loss, "ema_momentum": momentum},

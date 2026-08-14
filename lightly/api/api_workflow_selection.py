@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import time
 import warnings
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import numpy as np
-from numpy.typing import NDArray
 
 from lightly.active_learning.config.selection_config import SelectionConfig
 from lightly.openapi_generated.swagger_client.models import (
@@ -15,6 +16,9 @@ from lightly.openapi_generated.swagger_client.models import (
     SamplingCreateRequest,
     TagData,
 )
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 def _parse_active_learning_scores(scores: Union[np.ndarray, List]):
@@ -29,7 +33,7 @@ def _parse_active_learning_scores(scores: Union[np.ndarray, List]):
 
 class _SelectionMixin:
     def upload_scores(
-        self, al_scores: Dict[str, NDArray[np.float_]], query_tag_id: str
+        self, al_scores: Dict[str, NDArray[np.float64]], query_tag_id: str
     ) -> None:
         """Uploads active learning scores for a tag.
 
@@ -83,7 +87,6 @@ class _SelectionMixin:
 
         :meta private:  # Skip docstring generation
         """
-
         warnings.warn(
             DeprecationWarning(
                 "ApiWorkflowClient.selection() is deprecated "
@@ -175,7 +178,6 @@ class _SelectionMixin:
         Last the SamplingCreateRequest is created with the necessary nested class instances.
 
         """
-
         sampling_config = SamplingConfig(
             stopping_condition=SamplingConfigStoppingCondition(
                 n_samples=selection_config.n_samples,

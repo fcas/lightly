@@ -14,6 +14,7 @@ from lightly.api.api_workflow_artifacts import _ArtifactsMixin
 from lightly.api.api_workflow_collaboration import _CollaborationMixin
 from lightly.api.api_workflow_compute_worker import _ComputeWorkerMixin
 from lightly.api.api_workflow_datasets import _DatasetsMixin
+from lightly.api.api_workflow_datasource_listing import _DatasourceListingMixin
 from lightly.api.api_workflow_datasources import _DatasourcesMixin
 from lightly.api.api_workflow_download_dataset import _DownloadDatasetMixin
 from lightly.api.api_workflow_export import _ExportDatasetMixin
@@ -56,6 +57,7 @@ class ApiWorkflowClient(
     _UploadCustomMetadataMixin,
     _TagsMixin,
     _DatasourcesMixin,
+    _DatasourceListingMixin,
     _ComputeWorkerMixin,
     _CollaborationMixin,
     _PredictionsMixin,
@@ -77,7 +79,7 @@ class ApiWorkflowClient(
             see: https://docs.lightly.ai/docs/install-lightly#api-token
         dataset_id:
             The id of the dataset. If it is not set, but used by a workflow, the last
-            modfied dataset is taken by default.
+            modified dataset is taken by default.
         embedding_id:
             The id of the embedding to use. If it is not set, but used by a workflow,
             the newest embedding is taken by default
@@ -181,8 +183,7 @@ class ApiWorkflowClient(
         """
         if not self.dataset_exists(dataset_id):
             raise ValueError(
-                f"A dataset with the id {dataset_id} does not exist on the web"
-                f"platform."
+                f"A dataset with the id {dataset_id} does not exist on the webplatform."
             )
         self._dataset_id = dataset_id
 
@@ -259,7 +260,6 @@ class ApiWorkflowClient(
 
         :meta private:  # Skip docstring generation
         """
-
         # check to see if server side encryption for S3 is desired
         # see https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingServerSideEncryption.html
         # see https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html
@@ -279,9 +279,9 @@ class ApiWorkflowClient(
                 else:
                     # enable SSE with specific customer KMS key
                     headers["x-amz-server-side-encryption"] = "aws:kms"
-                    headers[
-                        "x-amz-server-side-encryption-aws-kms-key-id"
-                    ] = lightly_s3_sse_kms_key
+                    headers["x-amz-server-side-encryption-aws-kms-key-id"] = (
+                        lightly_s3_sse_kms_key
+                    )
 
         # start requests session and make put request
         sess = session or requests

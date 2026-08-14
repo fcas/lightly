@@ -16,8 +16,12 @@
 import re  # noqa: F401
 import io
 import warnings
-
-from pydantic import validate_arguments, ValidationError
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import validate_arguments, ValidationError
+except ImportError:
+    # Pydantic v1
+    from pydantic import validate_arguments, ValidationError
 from typing_extensions import Annotated
 
 
@@ -43,7 +47,7 @@ class QuotaApi(object):
 
     @validate_arguments
     def get_quota_maximum_dataset_size(self, **kwargs) -> str:  # noqa: E501
-        """get_quota_maximum_dataset_size  # noqa: E501
+        """Get user quota  # noqa: E501
 
         Get quota of the current user for the maximum dataset size  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -70,7 +74,7 @@ class QuotaApi(object):
 
     @validate_arguments
     def get_quota_maximum_dataset_size_with_http_info(self, **kwargs) -> ApiResponse:  # noqa: E501
-        """get_quota_maximum_dataset_size  # noqa: E501
+        """Get user quota  # noqa: E501
 
         Get quota of the current user for the maximum dataset size  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an

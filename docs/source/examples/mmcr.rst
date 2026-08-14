@@ -13,6 +13,9 @@ Reference:
 
     .. tab:: PyTorch
 
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch/mmcr.ipynb
+
         This example can be run from the command line with::
 
             python lightly/examples/pytorch/mmcr.py
@@ -21,6 +24,9 @@ Reference:
 
     .. tab:: Lightning
 
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch_lightning/mmcr.ipynb
+
         This example can be run from the command line with::
 
             python lightly/examples/pytorch_lightning/mmcr.py
@@ -28,6 +34,9 @@ Reference:
         .. literalinclude:: ../../../examples/pytorch_lightning/mmcr.py
 
     .. tab:: Lightning Distributed
+
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch_lightning_distributed/mmcr.ipynb
 
         This example runs on multiple gpus using Distributed Data Parallel (DDP)
         training with Pytorch Lightning. At least one GPU must be available on 

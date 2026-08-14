@@ -1,22 +1,20 @@
-""" Collate Functions """
+"""Collate Functions"""
 
 # Copyright (c) 2020. Lightly AG and its affiliates.
 # All Rights Reserved
 
-import math
-from multiprocessing import Value
-from typing import List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 from warnings import warn
 
 import torch
 import torch.nn as nn
 import torchvision
-import torchvision.transforms as T
 from PIL import Image
 
 from lightly.transforms import GaussianBlur, Jigsaw, RandomSolarization
 from lightly.transforms.random_crop_and_flip_with_grid import RandomResizedCropAndFlip
 from lightly.transforms.rotation import random_rotation_transform
+from lightly.transforms.torchvision_v2_compatibility import torchvision_transforms as T
 from lightly.transforms.utils import IMAGENET_NORMALIZE
 
 imagenet_normalize = IMAGENET_NORMALIZE
@@ -38,7 +36,7 @@ class BaseCollateFunction(nn.Module):
 
     """
 
-    def __init__(self, transform: torchvision.transforms.Compose):
+    def __init__(self, transform: T.Compose):
         _deprecation_warning_collate_functions()
         super(BaseCollateFunction, self).__init__()
         self.transform = transform
@@ -59,11 +57,11 @@ class BaseCollateFunction(nn.Module):
 
         Examples:
             >>> # define a random transformation and the collate function
-            >>> transform = ... # some random augmentations
+            >>> transform = ...  # some random augmentations
             >>> collate_fn = BaseCollateFunction(transform)
             >>>
             >>> # input is a batch of tuples (here, batch_size = 1)
-            >>> input = [(img, 0, 'my-image.png')]
+            >>> input = [(img, 0, "my-image.png")]
             >>> output = collate_fn(input)
             >>>
             >>> # output consists of two random transforms of the images,
@@ -109,7 +107,7 @@ class ImageCollateFunction(BaseCollateFunction):
         cj_bright:
             How much to jitter brightness.
         cj_contrast:
-            How much to jitter constrast.
+            How much to jitter contrast.
         cj_sat:
             How much to jitter saturation.
         cj_hue:
@@ -171,9 +169,9 @@ class ImageCollateFunction(BaseCollateFunction):
 
         transform = [
             T.RandomResizedCrop(size=input_size, scale=(min_scale, 1.0)),
-            random_rotation_transform(rr_prob=rr_prob, rr_degrees=rr_degrees),
             T.RandomHorizontalFlip(p=hf_prob),
             T.RandomVerticalFlip(p=vf_prob),
+            random_rotation_transform(rr_prob=rr_prob, rr_degrees=rr_degrees),
             T.RandomApply([color_jitter], p=cj_prob),
             T.RandomGrayscale(p=random_gray_scale),
             GaussianBlur(kernel_size=kernel_size, sigmas=sigmas, prob=gaussian_blur),
@@ -198,7 +196,7 @@ class MultiViewCollateFunction(nn.Module):
 
     """
 
-    def __init__(self, transforms: List[torchvision.transforms.Compose]):
+    def __init__(self, transforms: List[T.Compose]):
         _deprecation_warning_collate_functions()
         super().__init__()
         self.transforms = transforms
@@ -264,7 +262,6 @@ class SimCLRCollateFunction(ImageCollateFunction):
             Dictionary with 'mean' and 'std' for torchvision.transforms.Normalize.
 
     Examples:
-
         >>> # SimCLR for ImageNet
         >>> collate_fn = SimCLRCollateFunction()
         >>>
@@ -352,7 +349,6 @@ class MoCoCollateFunction(ImageCollateFunction):
             Dictionary with 'mean' and 'std' for torchvision.transforms.Normalize.
 
     Examples:
-
         >>> # MoCo v1 for ImageNet
         >>> collate_fn = MoCoCollateFunction()
         >>>
@@ -502,7 +498,6 @@ class SwaVCollateFunction(MultiCropCollateFunction):
             Dictionary with 'mean' and 'std' for torchvision.transforms.Normalize.
 
     Examples:
-
         >>> # SwaV for Imagenet
         >>> collate_fn = SwaVCollateFunction()
         >>>
@@ -601,7 +596,7 @@ class DINOCollateFunction(MultiViewCollateFunction):
         cj_bright:
             How much to jitter brightness.
         cj_contrast:
-            How much to jitter constrast.
+            How much to jitter contrast.
         cj_sat:
             How much to jitter saturation.
         cj_hue:
@@ -790,7 +785,7 @@ class PIRLCollateFunction(nn.Module):
         cj_bright:
             How much to jitter brightness.
         cj_contrast:
-            How much to jitter constrast.
+            How much to jitter contrast.
         cj_sat:
             How much to jitter saturation.
         cj_hue:
@@ -807,7 +802,6 @@ class PIRLCollateFunction(nn.Module):
             Dictionary with 'mean' and 'std' for torchvision.transforms.Normalize.
 
     Examples:
-
         >>> # PIRL for ImageNet
         >>> collate_fn = PIRLCollateFunction()
         >>>
@@ -871,7 +865,8 @@ class PIRLCollateFunction(nn.Module):
     def forward(self, batch: List[tuple]):
         """Overriding the BaseCollateFunction class's forward method because
         for PIRL we need only one augmented batch, as opposed to both, which the
-        BaseCollateFunction creates."""
+        BaseCollateFunction creates.
+        """
         batch_size = len(batch)
 
         # list of transformed images
@@ -1095,7 +1090,7 @@ class VICRegCollateFunction(BaseCollateFunction):
         cj_bright:
             How much to jitter brightness.
         cj_contrast:
-            How much to jitter constrast.
+            How much to jitter contrast.
         cj_sat:
             How much to jitter saturation.
         cj_hue:
@@ -1160,9 +1155,9 @@ class VICRegCollateFunction(BaseCollateFunction):
 
         transform = [
             T.RandomResizedCrop(size=input_size, scale=(min_scale, 1.0)),
-            random_rotation_transform(rr_prob=rr_prob, rr_degrees=rr_degrees),
             T.RandomHorizontalFlip(p=hf_prob),
             T.RandomVerticalFlip(p=vf_prob),
+            random_rotation_transform(rr_prob=rr_prob, rr_degrees=rr_degrees),
             T.RandomApply([color_jitter], p=cj_prob),
             T.RandomGrayscale(p=random_gray_scale),
             RandomSolarization(prob=solarize_prob),
@@ -1308,8 +1303,7 @@ class VICRegLCollateFunction(nn.Module):
         torch.Tensor,
         torch.Tensor,
     ]:
-        """
-        Applies transforms to images in the input batch.
+        """Applies transforms to images in the input batch.
 
         Args:
             batch:
@@ -1321,7 +1315,6 @@ class VICRegLCollateFunction(nn.Module):
             labels (as torch.Tensor), and filenames (as torch.Tensor).
 
         """
-
         views_global = []
         views_local = []
         grids_global = []
@@ -1347,179 +1340,31 @@ class VICRegLCollateFunction(nn.Module):
         return (views_global, views_local, grids_global, grids_local), labels, fnames
 
 
-class IJEPAMaskCollator:
-    """Collator for IJEPA model [0].
-
-    Experimental: Support for I-JEPA is experimental, there might be breaking changes
-    in the future.
-
-    Code inspired by [1].
-
-    - [0]: Joint-Embedding Predictive Architecture, 2023, https://arxiv.org/abs/2301.08243
-    - [1]: https://github.com/facebookresearch/ijepa
-    """
-
-    def __init__(
-        self,
-        input_size=(224, 224),
-        patch_size=16,
-        enc_mask_scale=(0.2, 0.8),
-        pred_mask_scale=(0.2, 0.8),
-        aspect_ratio=(0.3, 3.0),
-        nenc=1,
-        npred=2,
-        min_keep=4,
-        allow_overlap=False,
-    ):
-        if not isinstance(input_size, tuple):
-            input_size = (input_size,) * 2
-        self.patch_size = patch_size
-        self.height, self.width = (
-            input_size[0] // patch_size,
-            input_size[1] // patch_size,
-        )
-        self.enc_mask_scale = enc_mask_scale
-        self.pred_mask_scale = pred_mask_scale
-        self.aspect_ratio = aspect_ratio
-        self.nenc = nenc
-        self.npred = npred
-        self.min_keep = min_keep  # minimum number of patches to keep
-        self.allow_overlap = (
-            allow_overlap  # whether to allow overlap b/w enc and pred masks
-        )
-        self._itr_counter = Value("i", -1)  # collator is shared across worker processes
-
-    def step(self):
-        i = self._itr_counter
-        with i.get_lock():
-            i.value += 1
-            v = i.value
-        return v
-
-    def _sample_block_size(self, generator, scale, aspect_ratio_scale):
-        _rand = torch.rand(1, generator=generator).item()
-        # -- Sample block scale
-        min_s, max_s = scale
-        mask_scale = min_s + _rand * (max_s - min_s)
-        max_keep = int(self.height * self.width * mask_scale)
-        # -- Sample block aspect-ratio
-        min_ar, max_ar = aspect_ratio_scale
-        aspect_ratio = min_ar + _rand * (max_ar - min_ar)
-        # -- Compute block height and width (given scale and aspect-ratio)
-        h = int(round(math.sqrt(max_keep * aspect_ratio)))
-        w = int(round(math.sqrt(max_keep / aspect_ratio)))
-        while h >= self.height:
-            h -= 1
-        while w >= self.width:
-            w -= 1
-
-        return (h, w)
-
-    def _sample_block_mask(self, b_size, acceptable_regions=None):
-        h, w = b_size
-
-        def constrain_mask(mask, tries=0):
-            """Helper to restrict given mask to a set of acceptable regions"""
-            N = max(int(len(acceptable_regions) - tries), 0)
-            for k in range(N):
-                mask *= acceptable_regions[k]
-
-        # --
-        # -- Loop to sample masks until we find a valid one
-        tries = 0
-        timeout = og_timeout = 20
-        valid_mask = False
-        while not valid_mask:
-            # -- Sample block top-left corner
-            top = torch.randint(0, self.height - h, (1,))
-            left = torch.randint(0, self.width - w, (1,))
-            mask = torch.zeros((self.height, self.width), dtype=torch.int32)
-            mask[top : top + h, left : left + w] = 1
-            # -- Constrain mask to a set of acceptable regions
-            if acceptable_regions is not None:
-                constrain_mask(mask, tries)
-            mask = torch.nonzero(mask.flatten())
-            # -- If mask too small try again
-            valid_mask = len(mask) > self.min_keep
-            if not valid_mask:
-                timeout -= 1
-                if timeout == 0:
-                    tries += 1
-                    timeout = og_timeout
-        mask = mask.squeeze()
-        # --
-        mask_complement = torch.ones((self.height, self.width), dtype=torch.int32)
-        mask_complement[top : top + h, left : left + w] = 0
-        # --
-        return mask, mask_complement
-
-    def __call__(self, batch):
-        """
-        Create encoder and predictor masks when collating imgs into a batch
-        # 1. sample enc block (size + location) using seed
-        # 2. sample pred block (size) using seed
-        # 3. sample several enc block locations for each image (w/o seed)
-        # 4. sample several pred block locations for each image (w/o seed)
-        # 5. return enc mask and pred mask
-        """
-        B = len(batch)
-
-        collated_batch = torch.utils.data.default_collate(batch)
-
-        seed = self.step()
-        g = torch.Generator()
-        g.manual_seed(seed)
-        p_size = self._sample_block_size(
-            generator=g,
-            scale=self.pred_mask_scale,
-            aspect_ratio_scale=self.aspect_ratio,
-        )
-        e_size = self._sample_block_size(
-            generator=g, scale=self.enc_mask_scale, aspect_ratio_scale=(1.0, 1.0)
-        )
-
-        collated_masks_pred, collated_masks_enc = [], []
-        min_keep_pred = self.height * self.width
-        min_keep_enc = self.height * self.width
-        for _ in range(B):
-            masks_p, masks_C = [], []
-            for _ in range(self.npred):
-                mask, mask_C = self._sample_block_mask(p_size)
-                masks_p.append(mask)
-                masks_C.append(mask_C)
-                min_keep_pred = min(min_keep_pred, len(mask))
-            collated_masks_pred.append(masks_p)
-
-            acceptable_regions = masks_C
-
-            if self.allow_overlap:
-                acceptable_regions = None
-
-            masks_e = []
-            for _ in range(self.nenc):
-                mask, _ = self._sample_block_mask(
-                    e_size, acceptable_regions=acceptable_regions
-                )
-                masks_e.append(mask)
-                min_keep_enc = min(min_keep_enc, len(mask))
-            collated_masks_enc.append(masks_e)
-
-        collated_masks_pred = [
-            [cm[:min_keep_pred] for cm in cm_list] for cm_list in collated_masks_pred
-        ]
-        collated_masks_pred = torch.utils.data.default_collate(collated_masks_pred)
-        # --
-        collated_masks_enc = [
-            [cm[:min_keep_enc] for cm in cm_list] for cm_list in collated_masks_enc
-        ]
-        collated_masks_enc = torch.utils.data.default_collate(collated_masks_enc)
-
-        return collated_batch, collated_masks_enc, collated_masks_pred
-
-
 def _deprecation_warning_collate_functions() -> None:
     warn(
         "Collate functions are deprecated and will be removed in favor of transforms in v1.4.0.\n"
         "See https://docs.lightly.ai/self-supervised-learning/examples/models.html for examples.",
         category=DeprecationWarning,
     )
+
+
+if TYPE_CHECKING:
+    # IJEPAMaskCollator moved to lightly.data.ijepa_collate. Bind the name for type
+    # checkers only; at runtime __getattr__ below serves it with a warning.
+    from lightly.data.ijepa_collate import IJEPAMaskCollator
+else:
+
+    def __getattr__(name: str) -> Any:
+        # Resolve the moved name lazily (PEP 562) so the old import path warns
+        # instead of failing, and raises AttributeError once it is removed.
+        if name == "IJEPAMaskCollator":
+            from lightly.data.ijepa_collate import IJEPAMaskCollator
+            from lightly.utils.deprecation import warn_deprecated
+
+            warn_deprecated(
+                "Importing IJEPAMaskCollator from lightly.data.collate",
+                "lightly.data.IJEPAMaskCollator",
+                removed_in="1.7.0",
+            )
+            return IJEPAMaskCollator
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

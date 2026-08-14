@@ -20,7 +20,12 @@ import pprint
 import re  # noqa: F401
 
 from typing import Any, List, Optional
-from pydantic import BaseModel, Field, StrictStr, ValidationError, validator
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field, StrictStr, ValidationError, validator
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field, StrictStr, ValidationError, validator
 from lightly.openapi_generated.swagger_client.models.datasource_config_azure import DatasourceConfigAzure
 from lightly.openapi_generated.swagger_client.models.datasource_config_gcs import DatasourceConfigGCS
 from lightly.openapi_generated.swagger_client.models.datasource_config_lightly import DatasourceConfigLIGHTLY
@@ -28,8 +33,12 @@ from lightly.openapi_generated.swagger_client.models.datasource_config_local imp
 from lightly.openapi_generated.swagger_client.models.datasource_config_obs import DatasourceConfigOBS
 from lightly.openapi_generated.swagger_client.models.datasource_config_s3 import DatasourceConfigS3
 from lightly.openapi_generated.swagger_client.models.datasource_config_s3_delegated_access import DatasourceConfigS3DelegatedAccess
-from typing import Any, List
-from pydantic import StrictStr, Field, Extra
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import StrictStr, Field
+except ImportError:
+    # Pydantic v1
+    from pydantic import StrictStr, Field
 
 DATASOURCECONFIG_ONE_OF_SCHEMAS = ["DatasourceConfigAzure", "DatasourceConfigGCS", "DatasourceConfigLIGHTLY", "DatasourceConfigLOCAL", "DatasourceConfigOBS", "DatasourceConfigS3", "DatasourceConfigS3DelegatedAccess"]
 
@@ -57,7 +66,7 @@ class DatasourceConfig(BaseModel):
     class Config:
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     discriminator_value_class_map = {
     }

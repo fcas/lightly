@@ -1,3 +1,6 @@
+# This example requires the following dependencies to be installed:
+# pip install lightly
+
 # Note: The model and training settings do not follow the reference settings
 # from the paper. The settings are chosen such that the example can easily be
 # run on a small dataset with a single GPU.
@@ -13,6 +16,7 @@ from torch import nn
 from lightly import loss, models
 from lightly.models import utils
 from lightly.models.modules import heads
+from lightly.models.modules.memory_bank import MemoryBankModule
 from lightly.transforms.smog_transform import SMoGTransform
 
 
@@ -36,7 +40,7 @@ class SMoGModel(pl.LightningModule):
         # smog
         self.n_groups = 300
         memory_bank_size = 10000
-        self.memory_bank = loss.memory_bank.MemoryBankModule(size=memory_bank_size)
+        self.memory_bank = MemoryBankModule(size=(memory_bank_size, 128))
         # create our loss
         group_features = torch.nn.functional.normalize(
             torch.rand(self.n_groups, 128), dim=1
@@ -54,7 +58,7 @@ class SMoGModel(pl.LightningModule):
     def _reset_group_features(self):
         # see https://arxiv.org/pdf/2207.06167.pdf Table 7b)
         features = self.memory_bank.bank
-        group_features = self._cluster_features(features.t())
+        group_features = self._cluster_features(features)
         self.smog.set_group_features(group_features)
 
     def _reset_momentum_weights(self):

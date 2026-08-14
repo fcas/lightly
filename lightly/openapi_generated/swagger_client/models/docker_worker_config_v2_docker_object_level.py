@@ -20,7 +20,12 @@ import json
 
 
 from typing import Optional, Union
-from pydantic import Extra,  BaseModel, Field, StrictFloat, StrictInt, constr, validator
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field, StrictFloat, StrictInt, constr, validator
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field, StrictFloat, StrictInt, constr, validator
 
 class DockerWorkerConfigV2DockerObjectLevel(BaseModel):
     """
@@ -28,7 +33,7 @@ class DockerWorkerConfigV2DockerObjectLevel(BaseModel):
     """
     crop_dataset_name: Optional[constr(strict=True)] = Field(None, alias="cropDatasetName", description="Identical limitations than DatasetName however it can be empty")
     padding: Optional[Union[StrictFloat, StrictInt]] = None
-    task_name: Optional[constr(strict=True)] = Field(None, alias="taskName", description="Since we sometimes stitch together SelectionInputTask+ActiveLearningScoreType, they need to follow the same specs of ActiveLearningScoreType. However, this can be an empty string due to internal logic. ")
+    task_name: Optional[constr(strict=True)] = Field(None, alias="taskName", description="Since we sometimes stitch together SelectionInputTask+ActiveLearningScoreType, they need to follow the same specs of ActiveLearningScoreType. However, this can be an empty string due to internal logic (no minLength). Also v2config.filespecs.ts has this pattern for predictionTaskJSONSchema as well. ")
     __properties = ["cropDatasetName", "padding", "taskName"]
 
     @validator('crop_dataset_name')
@@ -56,7 +61,7 @@ class DockerWorkerConfigV2DockerObjectLevel(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     def to_str(self, by_alias: bool = False) -> str:
         """Returns the string representation of the model"""

@@ -20,7 +20,12 @@ import json
 
 
 from typing import Any, Dict, Optional, Union
-from pydantic import Extra,  BaseModel, Field, StrictFloat, StrictInt, confloat, conint
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field, StrictFloat, StrictInt, confloat, conint
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field, StrictFloat, StrictInt, confloat, conint
 from lightly.openapi_generated.swagger_client.models.selection_config_v3_entry_strategy_all_of_target_range import SelectionConfigV3EntryStrategyAllOfTargetRange
 from lightly.openapi_generated.swagger_client.models.selection_strategy_threshold_operation import SelectionStrategyThresholdOperation
 from lightly.openapi_generated.swagger_client.models.selection_strategy_type_v3 import SelectionStrategyTypeV3
@@ -46,7 +51,7 @@ class SelectionConfigV3EntryStrategy(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     def to_str(self, by_alias: bool = False) -> str:
         """Returns the string representation of the model"""

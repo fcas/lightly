@@ -20,7 +20,12 @@ import json
 
 
 from typing import List, Optional
-from pydantic import Extra,  BaseModel, Field, StrictBool, StrictStr, conint, conlist, constr, validator
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field, StrictBool, StrictStr, conint, conlist, constr, validator
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field, StrictBool, StrictStr, conint, conlist, constr, validator
 from lightly.openapi_generated.swagger_client.models.docker_worker_state import DockerWorkerState
 from lightly.openapi_generated.swagger_client.models.docker_worker_type import DockerWorkerType
 
@@ -36,7 +41,7 @@ class DockerWorkerRegistryEntryData(BaseModel):
     created_at: conint(strict=True, ge=0) = Field(..., alias="createdAt", description="unix timestamp in milliseconds")
     last_modified_at: conint(strict=True, ge=0) = Field(..., alias="lastModifiedAt", description="unix timestamp in milliseconds")
     labels: conlist(StrictStr) = Field(..., description="The labels used for specifying the run-worker-relationship")
-    is_default: StrictBool = Field(..., alias="isDefault", description="If true, this worker was created by the API/System and not by a user. ")
+    is_default: Optional[StrictBool] = Field(None, alias="isDefault", description="If true, this worker was created by the API/System and not by a user. ")
     docker_version: Optional[StrictStr] = Field(None, alias="dockerVersion")
     __properties = ["id", "userId", "name", "workerType", "state", "createdAt", "lastModifiedAt", "labels", "isDefault", "dockerVersion"]
 
@@ -59,7 +64,7 @@ class DockerWorkerRegistryEntryData(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     def to_str(self, by_alias: bool = False) -> str:
         """Returns the string representation of the model"""
@@ -105,7 +110,7 @@ class DockerWorkerRegistryEntryData(BaseModel):
             "created_at": obj.get("createdAt"),
             "last_modified_at": obj.get("lastModifiedAt"),
             "labels": obj.get("labels"),
-            "is_default": obj.get("isDefault") if obj.get("isDefault") is not None else False,
+            "is_default": obj.get("isDefault"),
             "docker_version": obj.get("dockerVersion")
         })
         return _obj

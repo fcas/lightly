@@ -1,3 +1,6 @@
+# This example requires the following dependencies to be installed:
+# pip install lightly
+
 import pytorch_lightning as pl
 import torch
 import torchvision
@@ -71,12 +74,18 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
 transform = MAETransform()
+
+
 # we ignore object detection annotations by setting target_transform to return 0
+def target_transform(t):
+    return 0
+
+
 dataset = torchvision.datasets.VOCDetection(
     "datasets/pascal_voc",
     download=True,
     transform=transform,
-    target_transform=lambda t: 0,
+    target_transform=target_transform,
 )
 # or create a dataset from a folder containing images or videos:
 # dataset = LightlyDataset("path/to/folder")

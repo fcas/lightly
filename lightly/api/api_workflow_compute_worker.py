@@ -6,9 +6,11 @@ import time
 from functools import partial
 from typing import Any, Callable, Dict, Iterator, List, Optional, Type, TypeVar, Union
 
-from lightly.api import utils
+from lightly.api import retry_utils, utils
 from lightly.openapi_generated.swagger_client.api_client import ApiClient
 from lightly.openapi_generated.swagger_client.models import (
+    AutoTask,
+    AutoTaskTiling,
     CreateDockerWorkerRegistryEntryRequest,
     DockerRunData,
     DockerRunScheduledCreateRequest,
@@ -64,7 +66,7 @@ class ComputeWorkerRunInfo:
         ]
 
     def ended_successfully(self) -> bool:
-        """Checkes whether the Lightly Worker run ended successfully or failed.
+        """Checks whether the Lightly Worker run ended successfully or failed.
 
         Returns:
             A boolean value indicating if the Lightly Worker run was successful.
@@ -101,7 +103,9 @@ class _ComputeWorkerMixin:
 
         Examples:
             >>> client = ApiWorkflowClient(token="MY_AWESOME_TOKEN")
-            >>> worker_id = client.register_compute_worker(name="my-worker", labels=["worker-label"])
+            >>> worker_id = client.register_compute_worker(
+            ...     name="my-worker", labels=["worker-label"]
+            ... )
             >>> worker_id
             '64709eac61e9ce68180a6529'
         """
@@ -148,9 +152,9 @@ class _ComputeWorkerMixin:
                 ...
             }]
         """
-        entries: list[
-            DockerWorkerRegistryEntryData
-        ] = self._compute_worker_api.get_docker_worker_registry_entries()
+        entries: list[DockerWorkerRegistryEntryData] = (
+            self._compute_worker_api.get_docker_worker_registry_entries()
+        )
         return entries
 
     def delete_compute_worker(self, worker_id: str) -> None:
@@ -275,7 +279,7 @@ class _ComputeWorkerMixin:
                 Selection configuration.
             runs_on:
                 The required labels the Lightly Worker must have to take the job.
-                See our docs for more information regarding the runs_on paramter:
+                See our docs for more information regarding the runs_on parameter:
                 https://docs.lightly.ai/docs/assign-scheduled-runs-to-specific-workers
 
         Returns:
@@ -418,7 +422,9 @@ class _ComputeWorkerMixin:
 
         Examples:
             >>> client = ApiWorkflowClient(token="MY_AWESOME_TOKEN")
-            >>> client.get_compute_worker_run_from_scheduled_run(scheduled_run_id="646f338a8a5613b57d8b73a1")
+            >>> client.get_compute_worker_run_from_scheduled_run(
+            ...     scheduled_run_id="646f338a8a5613b57d8b73a1"
+            ... )
             {'artifacts': [...],
              'config_id': '6470a16461e9ce68180a6530',
              'created_at': 1679479418110,
@@ -473,18 +479,19 @@ class _ComputeWorkerMixin:
         """Returns the schedule run data given the id of the scheduled run.
 
         TODO (MALTE, 09/2022): Have a proper API endpoint for doing this.
+
         Args:
             scheduled_run_id:
                 The ID with which the run was scheduled.
 
         Returns:
-            Defails of the scheduled run.
+            Details of the scheduled run.
 
         """
         try:
             run: DockerRunScheduledData = next(
                 run
-                for run in utils.retry(
+                for run in retry_utils.retry(
                     lambda: self._compute_worker_api.get_docker_runs_scheduled_by_dataset_id(
                         self.dataset_id
                     )
@@ -624,15 +631,37 @@ class _ComputeWorkerMixin:
 
 def selection_config_from_dict(cfg: Dict[str, Any]) -> SelectionConfigV4:
     """Recursively converts selection config from dict to a SelectionConfigV4 instance."""
-    strategies = []
-    for entry in cfg.get("strategies", []):
-        new_entry = copy.deepcopy(entry)
-        new_entry["input"] = SelectionConfigV4EntryInput(**entry["input"])
-        new_entry["strategy"] = SelectionConfigV4EntryStrategy(**entry["strategy"])
-        strategies.append(SelectionConfigV4Entry(**new_entry))
     new_cfg = copy.deepcopy(cfg)
+    strategies = []
+    for entry in new_cfg.get("strategies", []):
+        strategies.append(selection_config_entry_from_dict(entry=entry))
     new_cfg["strategies"] = strategies
+    auto_tasks = []
+    for entry in new_cfg.get("auto_tasks", []):
+        auto_tasks.append(auto_task_from_dict(entry=entry))
+    new_cfg["auto_tasks"] = auto_tasks
     return SelectionConfigV4(**new_cfg)
+
+
+def selection_config_entry_from_dict(entry: Dict[str, Any]) -> AutoTask:
+    new_entry = copy.deepcopy(entry)
+    new_entry["input"] = SelectionConfigV4EntryInput(**new_entry["input"])
+    new_entry["strategy"] = SelectionConfigV4EntryStrategy(**new_entry["strategy"])
+    return SelectionConfigV4Entry(**new_entry)
+
+
+def auto_task_from_dict(entry: Dict[str, Any]) -> AutoTask:
+    auto_task_type_to_class = {
+        "TILING": AutoTaskTiling,
+    }
+    if entry["type"] not in auto_task_type_to_class:
+        raise ValueError(
+            f"AutoTask type '{entry['type']}' not supported. "
+            f"Supported types are: {list(auto_task_type_to_class.keys())}"
+        )
+    auto_task_class = auto_task_type_to_class[entry["type"]]
+    auto_task_instance = auto_task_class(**entry)
+    return AutoTask(actual_instance=auto_task_instance)
 
 
 _T = TypeVar("_T")
@@ -686,7 +715,6 @@ def _validate_config(
         InvalidConfigurationError: If obj is not a valid config.
 
     """
-
     if cfg is None:
         return
 

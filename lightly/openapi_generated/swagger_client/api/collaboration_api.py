@@ -16,11 +16,20 @@
 import re  # noqa: F401
 import io
 import warnings
-
-from pydantic import validate_arguments, ValidationError
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import validate_arguments, ValidationError
+except ImportError:
+    # Pydantic v1
+    from pydantic import validate_arguments, ValidationError
 from typing_extensions import Annotated
 
-from pydantic import Field, constr, validator
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import Field, constr, validator
+except ImportError:
+    # Pydantic v1
+    from pydantic import Field, constr, validator
 
 from typing import List
 
@@ -50,7 +59,7 @@ class CollaborationApi(object):
 
     @validate_arguments
     def create_or_update_shared_access_config_by_dataset_id(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], shared_access_config_create_request : SharedAccessConfigCreateRequest, **kwargs) -> CreateEntityResponse:  # noqa: E501
-        """create_or_update_shared_access_config_by_dataset_id  # noqa: E501
+        """Create or update shared access config  # noqa: E501
 
         Create or update a shared access config.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -81,7 +90,7 @@ class CollaborationApi(object):
 
     @validate_arguments
     def create_or_update_shared_access_config_by_dataset_id_with_http_info(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], shared_access_config_create_request : SharedAccessConfigCreateRequest, **kwargs) -> ApiResponse:  # noqa: E501
-        """create_or_update_shared_access_config_by_dataset_id  # noqa: E501
+        """Create or update shared access config  # noqa: E501
 
         Create or update a shared access config.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -208,7 +217,7 @@ class CollaborationApi(object):
 
     @validate_arguments
     def delete_shared_access_config_by_id(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], access_config_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the shared access config.")], **kwargs) -> None:  # noqa: E501
-        """delete_shared_access_config_by_id  # noqa: E501
+        """Delete shared access config by id  # noqa: E501
 
         Delete shared access config by id.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -239,7 +248,7 @@ class CollaborationApi(object):
 
     @validate_arguments
     def delete_shared_access_config_by_id_with_http_info(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], access_config_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the shared access config.")], **kwargs) -> ApiResponse:  # noqa: E501
-        """delete_shared_access_config_by_id  # noqa: E501
+        """Delete shared access config by id  # noqa: E501
 
         Delete shared access config by id.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -353,7 +362,7 @@ class CollaborationApi(object):
 
     @validate_arguments
     def get_shared_access_configs_by_dataset_id(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], **kwargs) -> List[SharedAccessConfigData]:  # noqa: E501
-        """get_shared_access_configs_by_dataset_id  # noqa: E501
+        """Get shared access configs by dataset id  # noqa: E501
 
         Get shared access configs by datasetId.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -382,7 +391,7 @@ class CollaborationApi(object):
 
     @validate_arguments
     def get_shared_access_configs_by_dataset_id_with_http_info(self, dataset_id : Annotated[constr(strict=True), Field(..., description="ObjectId of the dataset")], **kwargs) -> ApiResponse:  # noqa: E501
-        """get_shared_access_configs_by_dataset_id  # noqa: E501
+        """Get shared access configs by dataset id  # noqa: E501
 
         Get shared access configs by datasetId.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an

@@ -1,26 +1,37 @@
 from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Dict, Sequence, Union
 
 import aim
+import dino
+import dinov2
 import finetune_eval
+import ibot
 import knn_eval
+import lejepa
 import linear_eval
 import mae
+import pixio
 import torch
-from pytorch_lightning import LightningModule, Trainer
-from pytorch_lightning.callbacks import DeviceStatsMonitor, LearningRateMonitor
+import visreg
+from pytorch_lightning import LightningModule, Trainer, seed_everything
+from pytorch_lightning.callbacks import (
+    DeviceStatsMonitor,
+    EarlyStopping,
+    LearningRateMonitor,
+)
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
-from torchvision import transforms as T
 
 from lightly.data import LightlyDataset
 from lightly.data.multi_view_collate import MultiViewCollate
+from lightly.transforms.torchvision_v2_compatibility import torchvision_transforms as T
 from lightly.transforms.utils import IMAGENET_NORMALIZE
 from lightly.utils.benchmarking import MetricCallback
+from lightly.utils.dist import print_rank_zero
 
-parser = ArgumentParser("ImageNet ViT-B/16 Benchmarks")
+parser = ArgumentParser("ImageNet Benchmarks")
 parser.add_argument("--train-dir", type=Path, default="/datasets/imagenet/train")
 parser.add_argument("--val-dir", type=Path, default="/datasets/imagenet/val")
 parser.add_argument("--log-dir", type=Path, default="benchmark_logs")
@@ -30,19 +41,28 @@ parser.add_argument("--num-workers", type=int, default=8)
 parser.add_argument("--accelerator", type=str, default="gpu")
 parser.add_argument("--devices", type=int, default=1)
 parser.add_argument("--precision", type=str, default="16-mixed")
+parser.add_argument("--ckpt-path", type=Path, default=None)
 parser.add_argument("--compile-model", action="store_true")
 parser.add_argument("--methods", type=str, nargs="+")
+parser.add_argument("--eval-method", type=str, default="mae", choices=["mae", "simclr"])
 parser.add_argument("--num-classes", type=int, default=1000)
 parser.add_argument("--skip-knn-eval", action="store_true")
+parser.add_argument("--knn-k", type=int, default=200)
+parser.add_argument("--knn-t", type=float, default=0.07)
 parser.add_argument("--skip-linear-eval", action="store_true")
 parser.add_argument("--skip-finetune-eval", action="store_true")
 parser.add_argument("--float32-matmul-precision", type=str, default="high")
 parser.add_argument("--strategy", default="ddp_find_unused_parameters_true")
-
-
+parser.add_argument("--seed", type=int, default=None)
 METHODS = {
+    "dino": {"model": dino.DINO, "transform": dino.transform},
+    "dinov2": {"model": dinov2.DINOv2, "transform": dinov2.transform},
+    "ibot": {"model": ibot.IBOT, "transform": ibot.transform},
+    "lejepa": {"model": lejepa.LeJEPA, "transform": lejepa.transform},
     "mae": {"model": mae.MAE, "transform": mae.transform},
+    "pixio": {"model": pixio.Pixio, "transform": pixio.transform},
     "aim": {"model": aim.AIM, "transform": aim.transform},
+    "visreg": {"model": visreg.VISReg, "transform": visreg.transform},
 }
 
 
@@ -58,13 +78,20 @@ def main(
     precision: str,
     compile_model: bool,
     methods: Union[Sequence[str], None],
+    eval_method: str,
     num_classes: int,
+    knn_k: int,
+    knn_t: float,
     skip_knn_eval: bool,
     skip_linear_eval: bool,
     skip_finetune_eval: bool,
+    ckpt_path: Union[Path, None],
     float32_matmul_precision: str,
     strategy: str,
+    seed: int | None = None,
 ) -> None:
+    print_rank_zero(f"Args: {locals()}")
+    seed_everything(seed, workers=True, verbose=True)
     torch.set_float32_matmul_precision(float32_matmul_precision)
 
     method_names = methods or METHODS.keys()
@@ -73,17 +100,22 @@ def main(
         method_dir = (
             log_dir / method / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         ).resolve()
+        print_rank_zero(f"Logging to {method_dir}")
         model = METHODS[method]["model"](
             batch_size_per_device=batch_size_per_device, num_classes=num_classes
         )
 
         if compile_model and hasattr(torch, "compile"):
             # Compile model if PyTorch supports it.
-            print("Compiling model...")
+            print_rank_zero("Compiling model...")
             model = torch.compile(model)
 
         if epochs <= 0:
-            print("Epochs <= 0, skipping pretraining.")
+            print_rank_zero("Epochs <= 0, skipping pretraining.")
+            if ckpt_path is not None:
+                model.load_state_dict(
+                    torch.load(ckpt_path, weights_only=False)["state_dict"]
+                )
         else:
             pretrain(
                 model=model,
@@ -97,13 +129,15 @@ def main(
                 accelerator=accelerator,
                 devices=devices,
                 precision=precision,
+                ckpt_path=ckpt_path,
                 strategy=strategy,
             )
 
+        eval_metrics: Dict[str, Dict[str, float]] = dict()
         if skip_knn_eval:
-            print("Skipping KNN eval.")
+            print_rank_zero("Skipping KNN eval.")
         else:
-            knn_eval.knn_eval(
+            eval_metrics["knn"] = knn_eval.knn_eval(
                 model=model,
                 num_classes=num_classes,
                 train_dir=train_dir,
@@ -113,13 +147,17 @@ def main(
                 num_workers=num_workers,
                 accelerator=accelerator,
                 devices=devices,
+                strategy=strategy,
+                knn_k=knn_k,
+                knn_t=knn_t,
             )
 
         if skip_linear_eval:
-            print("Skipping linear eval.")
+            print_rank_zero("Skipping linear eval.")
         else:
-            linear_eval.linear_eval(
+            eval_metrics["linear"] = linear_eval.linear_eval(
                 model=model,
+                eval_method=eval_method,
                 num_classes=num_classes,
                 train_dir=train_dir,
                 val_dir=val_dir,
@@ -128,14 +166,16 @@ def main(
                 num_workers=num_workers,
                 accelerator=accelerator,
                 devices=devices,
+                strategy=strategy,
                 precision=precision,
             )
 
         if skip_finetune_eval:
-            print("Skipping fine-tune eval.")
+            print_rank_zero("Skipping fine-tune eval.")
         else:
-            finetune_eval.finetune_eval(
+            eval_metrics["finetune"] = finetune_eval.finetune_eval(
                 model=model,
+                eval_method=eval_method,
                 num_classes=num_classes,
                 train_dir=train_dir,
                 val_dir=val_dir,
@@ -144,8 +184,13 @@ def main(
                 num_workers=num_workers,
                 accelerator=accelerator,
                 devices=devices,
+                strategy=strategy,
                 precision=precision,
             )
+
+        if eval_metrics:
+            print_rank_zero(f"Results for {method}:")
+            print_rank_zero(eval_metrics_to_markdown(eval_metrics))
 
 
 def pretrain(
@@ -160,9 +205,10 @@ def pretrain(
     accelerator: str,
     devices: int,
     precision: str,
+    ckpt_path: Union[Path, None],
     strategy: str,
 ) -> None:
-    print(f"Running pretraining for {method}...")
+    print_rank_zero(f"Running pretraining for {method}...")
 
     # Setup training data.
     train_transform = METHODS[method]["transform"]
@@ -174,6 +220,7 @@ def pretrain(
         num_workers=num_workers,
         collate_fn=MultiViewCollate(),
         drop_last=True,
+        persistent_workers=True,
     )
 
     # Setup validation data.
@@ -191,6 +238,7 @@ def pretrain(
         batch_size=batch_size_per_device,
         shuffle=False,
         num_workers=num_workers,
+        persistent_workers=True,
     )
 
     # Train model.
@@ -201,21 +249,59 @@ def pretrain(
         devices=devices,
         callbacks=[
             LearningRateMonitor(),
+            # Stop if training loss diverges.
+            EarlyStopping(monitor="train_loss", patience=int(1e12), check_finite=True),
             DeviceStatsMonitor(),
             metric_callback,
         ],
         logger=TensorBoardLogger(save_dir=str(log_dir), name="pretrain"),
         precision=precision,
         strategy=strategy,
-        sync_batchnorm=True,
+        sync_batchnorm=accelerator != "cpu",  # Sync batchnorm is not supported on CPU
+        num_sanity_val_steps=0,  # NOTE: save shared memory usage
     )
     trainer.fit(
         model=model,
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
+        ckpt_path=ckpt_path,
     )
     for metric in ["val_online_cls_top1", "val_online_cls_top5"]:
-        print(f"max {metric}: {max(metric_callback.val_metrics[metric])}")
+        print_rank_zero(
+            f"max {metric}: {max(metric_callback.val_metrics.get(metric, [-1]))}"
+        )
+
+
+def eval_metrics_to_markdown(metrics: Dict[str, Dict[str, float]]) -> str:
+    EVAL_NAME_COLUMN_NAME = "Eval Name"
+    METRIC_COLUMN_NAME = "Metric Name"
+    VALUE_COLUMN_NAME = "Value"
+
+    eval_name_max_len = max(
+        len(eval_name) for eval_name in list(metrics.keys()) + [EVAL_NAME_COLUMN_NAME]
+    )
+    metric_name_max_len = max(
+        len(metric_name)
+        for metric_dict in metrics.values()
+        for metric_name in list(metric_dict.keys()) + [METRIC_COLUMN_NAME]
+    )
+    value_max_len = max(
+        len(metric_value)
+        for metric_dict in metrics.values()
+        for metric_value in list(f"{value:.2f}" for value in metric_dict.values())
+        + [VALUE_COLUMN_NAME]
+    )
+
+    header = f"| {EVAL_NAME_COLUMN_NAME.ljust(eval_name_max_len)} | {METRIC_COLUMN_NAME.ljust(metric_name_max_len)} | {VALUE_COLUMN_NAME.ljust(value_max_len)} |"
+    separator = f"|:{'-' * (eval_name_max_len)}:|:{'-' * (metric_name_max_len)}:|:{'-' * (value_max_len)}:|"
+
+    lines = [header, separator] + [
+        f"| {eval_name.ljust(eval_name_max_len)} | {metric_name.ljust(metric_name_max_len)} | {f'{metric_value:.2f}'.ljust(value_max_len)} |"
+        for eval_name, metric_dict in metrics.items()
+        for metric_name, metric_value in metric_dict.items()
+    ]
+
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":

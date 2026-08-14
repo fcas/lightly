@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List
 from urllib.request import Request
 
-from lightly.api.utils import retry
+from lightly.api import retry_utils
 from lightly.openapi_generated.swagger_client.models import (
     DatasetEmbeddingData,
     DimensionalityReductionMethod,
@@ -35,10 +35,10 @@ class _UploadEmbeddingsMixin:
 
         :meta private:  # Skip docstring generation
         """
-        embeddings_on_server: List[
-            DatasetEmbeddingData
-        ] = self._embeddings_api.get_embeddings_by_dataset_id(
-            dataset_id=self.dataset_id
+        embeddings_on_server: List[DatasetEmbeddingData] = (
+            self._embeddings_api.get_embeddings_by_dataset_id(
+                dataset_id=self.dataset_id
+            )
         )
         if len(embeddings_on_server) == 0:
             raise RuntimeError(
@@ -68,10 +68,10 @@ class _UploadEmbeddingsMixin:
                 on the server.
 
         """
-        embeddings_on_server: List[
-            DatasetEmbeddingData
-        ] = self._embeddings_api.get_embeddings_by_dataset_id(
-            dataset_id=self.dataset_id
+        embeddings_on_server: List[DatasetEmbeddingData] = (
+            self._embeddings_api.get_embeddings_by_dataset_id(
+                dataset_id=self.dataset_id
+            )
         )
         try:
             if ignore_suffix:
@@ -150,7 +150,7 @@ class _UploadEmbeddingsMixin:
         with tempfile.SpooledTemporaryFile(mode="r+b") as f_bytes:
             f_bytes.write(embeddings_csv_as_bytes)
             f_bytes.seek(0)
-            retry(
+            retry_utils.retry(
                 self.upload_file_with_signed_url,
                 file=f_bytes,
                 signed_write_url=signed_write_url,
@@ -191,7 +191,6 @@ class _UploadEmbeddingsMixin:
 
         :meta private:  # Skip docstring generation
         """
-
         # read embedding from API
         embedding_read_url = self._embeddings_api.get_embeddings_csv_read_url_by_id(
             self.dataset_id, embedding_id

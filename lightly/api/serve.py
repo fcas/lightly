@@ -1,4 +1,6 @@
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from __future__ import annotations
+
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Sequence
 from urllib import parse
@@ -10,7 +12,7 @@ def get_server(
     paths: Sequence[Path],
     host: str,
     port: int,
-):
+) -> ThreadingHTTPServer:
     """Returns an HTTP server that serves a local datasource.
 
     Args:
@@ -42,14 +44,14 @@ def get_server(
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.end_headers()
 
-        def send_response_only(self, code, message=None):
+        def send_response_only(self, code: int, message: str | None = None) -> None:
             super().send_response_only(code, message)
             self.send_header(
                 "Cache-Control", "no-store, must-revalidate, no-cache, max-age=-1"
             )
             self.send_header("Expires", "0")
 
-    return HTTPServer((host, port), _LocalDatasourceRequestHandler)
+    return ThreadingHTTPServer((host, port), _LocalDatasourceRequestHandler)
 
 
 def validate_input_mount(input_mount: Path) -> None:

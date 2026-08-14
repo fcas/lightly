@@ -14,10 +14,34 @@ lightly.loss
 .. autoclass:: lightly.loss.dcl_loss.DCLWLoss
    :members:
 
+.. autoclass:: lightly.loss.detcon_loss.DetConBLoss
+   :members:
+
+.. autoclass:: lightly.loss.detcon_loss.DetConSLoss
+   :members:
+
 .. autoclass:: lightly.loss.dino_loss.DINOLoss
    :members:
 
+.. autoclass:: lightly.loss.frossl_loss.FroSSLLoss
+   :members:
+
 .. autoclass:: lightly.loss.hypersphere_loss.HypersphereLoss
+   :members:
+
+.. autoclass:: lightly.loss.ibot_loss.IBOTPatchLoss
+   :members:
+
+.. autoclass:: lightly.loss.ibot_loss.IBOTPlusPlusPatchLoss
+   :members:
+
+.. autoclass:: lightly.loss.lejepa_loss.SIGReg
+   :members:
+
+.. autoclass:: lightly.loss.lejepa_loss.LeJEPALoss
+   :members:
+
+.. autoclass:: lightly.loss.koleo_loss.KoLeoLoss
    :members:
 
 .. autoclass:: lightly.loss.memory_bank.MemoryBankModule
@@ -35,6 +59,9 @@ lightly.loss
 .. autoclass:: lightly.loss.ntx_ent_loss.NTXentLoss
    :members:
 
+.. autoclass:: lightly.loss.patch_kernel_alignment_loss.PatchKernelAlignmentLoss
+   :members:
+
 .. autoclass:: lightly.loss.pmsn_loss.PMSNLoss
    :members:
 
@@ -42,6 +69,9 @@ lightly.loss
    :members:
 
 .. autoclass:: lightly.loss.regularizer.co2.CO2Regularizer
+   :members:
+
+.. autoclass:: lightly.loss.regularizer.dse.DSERegularizer
    :members:
 
 .. autoclass:: lightly.loss.swav_loss.SwaVLoss
@@ -58,3 +88,7 @@ lightly.loss
 
 .. autoclass:: lightly.loss.vicregl_loss.VICRegLLoss
    :members:
+
+.. autoclass:: lightly.loss.visreg_loss.VISRegLoss
+   :members:
+   :special-members: __init__

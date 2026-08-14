@@ -20,7 +20,12 @@ import json
 
 
 
-from pydantic import Extra,  BaseModel, Field
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field
 from lightly.openapi_generated.swagger_client.models.auth0_on_sign_up_request_user import Auth0OnSignUpRequestUser
 
 class Auth0OnSignUpRequest(BaseModel):
@@ -35,7 +40,7 @@ class Auth0OnSignUpRequest(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     def to_str(self, by_alias: bool = False) -> str:
         """Returns the string representation of the model"""

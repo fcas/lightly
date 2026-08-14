@@ -1,13 +1,10 @@
-""" Communication Utility """
+"""Communication Utility"""
 
 # Copyright (c) 2020. Lightly AG and its affiliates.
 # All Rights Reserved
 
 import io
 import os
-import random
-import threading
-import time
 from enum import Enum
 from typing import Iterator, List, Optional
 
@@ -17,54 +14,10 @@ from PIL import JpegImagePlugin
 
 JpegImagePlugin._getmp = lambda: None
 
+from lightly.api import retry_utils
 from lightly.openapi_generated.swagger_client.configuration import Configuration
 
 MAXIMUM_FILENAME_LENGTH = 255
-RETRY_MAX_BACKOFF = 32
-RETRY_MAX_RETRIES = 5
-
-
-def retry(func, *args, **kwargs):  # type: ignore
-    """Repeats a function until it completes successfully or fails too often.
-
-    Args:
-        func:
-            The function call to repeat.
-        args:
-            The arguments which are passed to the function.
-        kwargs:
-            Key-word arguments which are passed to the function.
-
-    Returns:
-        What func returns.
-
-    Exceptions:
-        RuntimeError when number of retries has been exceeded.
-
-    """
-
-    # config
-    backoff = 1.0 + random.random() * 0.1
-    max_backoff = RETRY_MAX_BACKOFF
-    max_retries = RETRY_MAX_RETRIES
-
-    # try to make the request
-    current_retries = 0
-    while True:
-        try:
-            # return on success
-            return func(*args, **kwargs)
-        except Exception as e:
-            # sleep on failure
-            time.sleep(backoff)
-            backoff = 2 * backoff if backoff < max_backoff else backoff
-            current_retries += 1
-
-            # max retries exceeded
-            if current_retries >= max_retries:
-                raise RuntimeError(
-                    f"Maximum retries exceeded! Original exception: {type(e)}: {str(e)}"
-                ) from e
 
 
 class Paginated(Iterator):
@@ -85,7 +38,7 @@ class Paginated(Iterator):
             # stop iteration if the last chunk was smaller than the page size
             if self.last_chunk_size < self.page_size:
                 raise StopIteration
-            chunk = retry(
+            chunk = retry_utils.retry(
                 self.fn,
                 page_offset=self.offset * self.page_size,
                 page_size=self.page_size,
@@ -97,7 +50,7 @@ class Paginated(Iterator):
             self.offset += 1
             self.last_chunk_size = len(chunk)
             # Handle the case where the chunk is a string. In this case we want
-            # to return the whole page as a single string instead of an interable
+            # to return the whole page as a single string instead of an iterable
             # of characters.
             chunk = chunk if not isinstance(chunk, str) else [chunk]
             self.entries.extend(chunk)
@@ -195,15 +148,14 @@ class DatasourceType(Enum):
 
 
 def get_signed_url_destination(signed_url: str = "") -> DatasourceType:
-    """
-    Tries to figure out the of which cloud provider/datasource type a signed url comes from (S3, GCS, Azure)
+    """Tries to figure out the of which cloud provider/datasource type a signed url comes from (S3, GCS, Azure)
+
     Args:
         signed_url:
             The signed url of a "bucket" provider
     Returns:
         DatasourceType
     """
-
     assert isinstance(signed_url, str)
 
     if "storage.googleapis.com/" in signed_url:

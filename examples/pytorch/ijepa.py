@@ -1,3 +1,6 @@
+# This example requires the following dependencies to be installed:
+# pip install lightly[timm]
+
 import copy
 
 import torch
@@ -6,7 +9,7 @@ from torch import nn
 from torch.nn import functional as F
 from tqdm import tqdm
 
-from lightly.data.collate import IJEPAMaskCollator
+from lightly.data import IJEPAMaskCollator
 from lightly.models import utils
 from lightly.models.modules.ijepa import IJEPABackbone, IJEPAPredictor
 from lightly.transforms.ijepa_transform import IJEPATransform
@@ -64,11 +67,17 @@ transform = IJEPATransform()
 # we ignore object detection annotations by setting target_transform to return 0
 # or create a dataset from a folder containing images or videos:
 # dataset = LightlyDataset("path/to/folder")
+
+
+def target_transform(t):
+    return 0
+
+
 dataset = torchvision.datasets.VOCDetection(
     "datasets/pascal_voc",
     download=True,
     transform=transform,
-    target_transform=lambda t: 0,
+    target_transform=target_transform,
 )
 data_loader = torch.utils.data.DataLoader(
     dataset, collate_fn=collator, batch_size=10, persistent_workers=False

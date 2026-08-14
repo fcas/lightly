@@ -1,4 +1,4 @@
-""" BaseEmbeddings """
+"""BaseEmbeddings"""
 
 # Copyright (c) 2020. Lightly AG and its affiliates.
 # All Rights Reserved
@@ -9,7 +9,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 import omegaconf
 from omegaconf import DictConfig
 from pytorch_lightning import LightningModule, Trainer
-from pytorch_lightning.callbacks.callback import Callback
+from pytorch_lightning.callbacks import Callback
 from torch import Tensor
 from torch.nn import Module
 from torch.optim import Optimizer
@@ -41,7 +41,6 @@ class BaseEmbedding(LightningModule):
             dataloader: (torch.utils.data.DataLoader)
 
         """
-
         super(BaseEmbedding, self).__init__()
         self.model = model
         self.criterion = criterion
@@ -84,7 +83,7 @@ class BaseEmbedding(LightningModule):
         trainer_config: DictConfig,
         checkpoint_callback_config: DictConfig,
         summary_callback_config: DictConfig,
-    ) -> None:
+    ) -> Trainer:
         """Train the model on the provided dataset.
 
         Args:
@@ -98,7 +97,7 @@ class BaseEmbedding(LightningModule):
             summary_callback_config: ModelSummary callback arguments
 
         Returns:
-            A trained encoder, ready for embedding datasets.
+            The PyTorch Lightning Trainer object used for training.
 
         """
         trainer_callbacks: List[Callback] = []
@@ -127,6 +126,9 @@ class BaseEmbedding(LightningModule):
 
         if checkpoint_cb.best_model_path != "":
             self.checkpoint = os.path.join(self.cwd, checkpoint_cb.best_model_path)
+
+        # Return trainer to check final training state.
+        return trainer
 
     def embed(self, *args: Any, **kwargs: Any) -> Any:
         """Must be implemented by classes which inherit from BaseEmbedding."""

@@ -16,11 +16,20 @@
 import re  # noqa: F401
 import io
 import warnings
-
-from pydantic import validate_arguments, ValidationError
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import validate_arguments, ValidationError
+except ImportError:
+    # Pydantic v1
+    from pydantic import validate_arguments, ValidationError
 from typing_extensions import Annotated
 
-from pydantic import Field, StrictStr, constr, validator
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import Field, StrictStr, constr, validator
+except ImportError:
+    # Pydantic v1
+    from pydantic import Field, StrictStr, constr, validator
 
 from typing import List
 
@@ -52,7 +61,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def add_team_member(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], create_team_membership_request : CreateTeamMembershipRequest, **kwargs) -> str:  # noqa: E501
-        """add_team_member  # noqa: E501
+        """Add team member  # noqa: E501
 
         Add a team member. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -83,7 +92,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def add_team_member_with_http_info(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], create_team_membership_request : CreateTeamMembershipRequest, **kwargs) -> ApiResponse:  # noqa: E501
-        """add_team_member  # noqa: E501
+        """Add team member  # noqa: E501
 
         Add a team member. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -210,7 +219,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def delete_team_member_by_id(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], user_id : Annotated[StrictStr, Field(..., description="id of the user")], **kwargs) -> None:  # noqa: E501
-        """delete_team_member_by_id  # noqa: E501
+        """Delete team member by id  # noqa: E501
 
         Deletes a member from a team. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -241,7 +250,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def delete_team_member_by_id_with_http_info(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], user_id : Annotated[StrictStr, Field(..., description="id of the user")], **kwargs) -> ApiResponse:  # noqa: E501
-        """delete_team_member_by_id  # noqa: E501
+        """Delete team member by id  # noqa: E501
 
         Deletes a member from a team. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -355,7 +364,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def get_service_accounts_by_team_id(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], **kwargs) -> List[ServiceAccountBasicData]:  # noqa: E501
-        """get_service_accounts_by_team_id  # noqa: E501
+        """Get service accounts by team id  # noqa: E501
 
         Get the service accounts of a team. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -384,7 +393,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def get_service_accounts_by_team_id_with_http_info(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], **kwargs) -> ApiResponse:  # noqa: E501
-        """get_service_accounts_by_team_id  # noqa: E501
+        """Get service accounts by team id  # noqa: E501
 
         Get the service accounts of a team. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -498,7 +507,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def get_team_by_id(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], **kwargs) -> TeamData:  # noqa: E501
-        """get_team_by_id  # noqa: E501
+        """Get team by id  # noqa: E501
 
         Get basic team information by ID.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -527,7 +536,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def get_team_by_id_with_http_info(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], **kwargs) -> ApiResponse:  # noqa: E501
-        """get_team_by_id  # noqa: E501
+        """Get team by id  # noqa: E501
 
         Get basic team information by ID.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -641,7 +650,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def get_team_members_by_id(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], **kwargs) -> List[ProfileBasicData]:  # noqa: E501
-        """get_team_members_by_id  # noqa: E501
+        """Get team members by id  # noqa: E501
 
         Get the members of a team. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -670,7 +679,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def get_team_members_by_id_with_http_info(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], **kwargs) -> ApiResponse:  # noqa: E501
-        """get_team_members_by_id  # noqa: E501
+        """Get team members by id  # noqa: E501
 
         Get the members of a team. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -783,8 +792,159 @@ class TeamsApi(object):
             _request_auth=_params.get('_request_auth'))
 
     @validate_arguments
+    def service_account_reset_token(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], service_account_id : Annotated[StrictStr, Field(..., description="id of the serviceAccount")], **kwargs) -> str:  # noqa: E501
+        """Reset service account token  # noqa: E501
+
+        Reset token of service account and generate a new one. This is not ideal because the user does not have a transition time between the old and new token (e.g for this pipelines). Also, the token should be a JWT or similar.   # noqa: E501
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.service_account_reset_token(team_id, service_account_id, async_req=True)
+        >>> result = thread.get()
+
+        :param team_id: id of the team (required)
+        :type team_id: str
+        :param service_account_id: id of the serviceAccount (required)
+        :type service_account_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: str
+        """
+        kwargs['_return_http_data_only'] = True
+        if '_preload_content' in kwargs:
+            raise ValueError("Error! Please call the service_account_reset_token_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
+        return self.service_account_reset_token_with_http_info(team_id, service_account_id, **kwargs)  # noqa: E501
+
+    @validate_arguments
+    def service_account_reset_token_with_http_info(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], service_account_id : Annotated[StrictStr, Field(..., description="id of the serviceAccount")], **kwargs) -> ApiResponse:  # noqa: E501
+        """Reset service account token  # noqa: E501
+
+        Reset token of service account and generate a new one. This is not ideal because the user does not have a transition time between the old and new token (e.g for this pipelines). Also, the token should be a JWT or similar.   # noqa: E501
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.service_account_reset_token_with_http_info(team_id, service_account_id, async_req=True)
+        >>> result = thread.get()
+
+        :param team_id: id of the team (required)
+        :type team_id: str
+        :param service_account_id: id of the serviceAccount (required)
+        :type service_account_id: str
+        :param async_req: Whether to execute the request asynchronously.
+        :type async_req: bool, optional
+        :param _preload_content: if False, the ApiResponse.data will
+                                 be set to none and raw_data will store the 
+                                 HTTP response body without reading/decoding.
+                                 Default is True.
+        :type _preload_content: bool, optional
+        :param _return_http_data_only: response data instead of ApiResponse
+                                       object with status code, headers, etc
+        :type _return_http_data_only: bool, optional
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the authentication
+                              in the spec for a single request.
+        :type _request_auth: dict, optional
+        :type _content_type: string, optional: force content-type for the request
+        :return: Returns the result object.
+                 If the method is called asynchronously,
+                 returns the request thread.
+        :rtype: tuple(str, status_code(int), headers(HTTPHeaderDict))
+        """
+
+        _params = locals()
+
+        _all_params = [
+            'team_id',
+            'service_account_id'
+        ]
+        _all_params.extend(
+            [
+                'async_req',
+                '_return_http_data_only',
+                '_preload_content',
+                '_request_timeout',
+                '_request_auth',
+                '_content_type',
+                '_headers'
+            ]
+        )
+
+        # validate the arguments
+        for _key, _val in _params['kwargs'].items():
+            if _key not in _all_params:
+                raise ApiTypeError(
+                    "Got an unexpected keyword argument '%s'"
+                    " to method service_account_reset_token" % _key
+                )
+            _params[_key] = _val
+        del _params['kwargs']
+
+        _collection_formats = {}
+
+        # process the path parameters
+        _path_params = {}
+        if _params['team_id']:
+            _path_params['teamId'] = _params['team_id']
+
+        if _params['service_account_id']:
+            _path_params['serviceAccountId'] = _params['service_account_id']
+
+
+        # process the query parameters
+        _query_params = []
+        # process the header parameters
+        _header_params = dict(_params.get('_headers', {}))
+        # process the form parameters
+        _form_params = []
+        _files = {}
+        # process the body parameter
+        _body_params = None
+        # set the HTTP header `Accept`
+        _header_params['Accept'] = self.api_client.select_header_accept(
+            ['application/json'])  # noqa: E501
+
+        # authentication setting
+        _auth_settings = ['auth0Bearer', 'ApiKeyAuth']  # noqa: E501
+
+        _response_types_map = {
+            '200': "str",
+            '400': "ApiErrorResponse",
+            '401': "ApiErrorResponse",
+            '403': "ApiErrorResponse",
+            '404': "ApiErrorResponse",
+        }
+
+        return self.api_client.call_api(
+            '/v1/teams/{teamId}/serviceaccounts/{serviceAccountId}/token', 'POST',
+            _path_params,
+            _query_params,
+            _header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            response_types_map=_response_types_map,
+            auth_settings=_auth_settings,
+            async_req=_params.get('async_req'),
+            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
+            _preload_content=_params.get('_preload_content', True),
+            _request_timeout=_params.get('_request_timeout'),
+            collection_formats=_collection_formats,
+            _request_auth=_params.get('_request_auth'))
+
+    @validate_arguments
     def update_team_member_by_id(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], user_id : Annotated[StrictStr, Field(..., description="id of the user")], update_team_membership_request : UpdateTeamMembershipRequest, **kwargs) -> None:  # noqa: E501
-        """update_team_member_by_id  # noqa: E501
+        """Update team member by id  # noqa: E501
 
         Update the team membership of a user. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -817,7 +977,7 @@ class TeamsApi(object):
 
     @validate_arguments
     def update_team_member_by_id_with_http_info(self, team_id : Annotated[constr(strict=True), Field(..., description="id of the team")], user_id : Annotated[StrictStr, Field(..., description="id of the user")], update_team_membership_request : UpdateTeamMembershipRequest, **kwargs) -> ApiResponse:  # noqa: E501
-        """update_team_member_by_id  # noqa: E501
+        """Update team member by id  # noqa: E501
 
         Update the team membership of a user. One needs to be part of the team to do so.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an

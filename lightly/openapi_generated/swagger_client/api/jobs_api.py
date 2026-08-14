@@ -16,11 +16,20 @@
 import re  # noqa: F401
 import io
 import warnings
-
-from pydantic import validate_arguments, ValidationError
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import validate_arguments, ValidationError
+except ImportError:
+    # Pydantic v1
+    from pydantic import validate_arguments, ValidationError
 from typing_extensions import Annotated
 
-from pydantic import Field, StrictStr
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import Field, StrictStr
+except ImportError:
+    # Pydantic v1
+    from pydantic import Field, StrictStr
 
 from typing import List
 
@@ -49,7 +58,7 @@ class JobsApi(object):
 
     @validate_arguments
     def get_job_status_by_id(self, job_id : Annotated[StrictStr, Field(..., description="id of the job")], **kwargs) -> JobStatusData:  # noqa: E501
-        """get_job_status_by_id  # noqa: E501
+        """Get job status by id  # noqa: E501
 
         Get status of a specific job  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -78,7 +87,7 @@ class JobsApi(object):
 
     @validate_arguments
     def get_job_status_by_id_with_http_info(self, job_id : Annotated[StrictStr, Field(..., description="id of the job")], **kwargs) -> ApiResponse:  # noqa: E501
-        """get_job_status_by_id  # noqa: E501
+        """Get job status by id  # noqa: E501
 
         Get status of a specific job  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -192,7 +201,7 @@ class JobsApi(object):
 
     @validate_arguments
     def get_jobs(self, **kwargs) -> List[JobsData]:  # noqa: E501
-        """get_jobs  # noqa: E501
+        """Get jobs  # noqa: E501
 
         Get all jobs you have created  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -219,7 +228,7 @@ class JobsApi(object):
 
     @validate_arguments
     def get_jobs_with_http_info(self, **kwargs) -> ApiResponse:  # noqa: E501
-        """get_jobs  # noqa: E501
+        """Get jobs  # noqa: E501
 
         Get all jobs you have created  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an

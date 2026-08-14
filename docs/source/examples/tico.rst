@@ -16,6 +16,9 @@ Reference:
 
     .. tab:: PyTorch
 
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch/tico.ipynb
+
         This example can be run from the command line with::
 
             python lightly/examples/pytorch/tico.py
@@ -24,6 +27,9 @@ Reference:
 
     .. tab:: Lightning
 
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch_lightning/tico.ipynb
+
         This example can be run from the command line with::
 
             python lightly/examples/pytorch_lightning/tico.py
@@ -31,6 +37,9 @@ Reference:
         .. literalinclude:: ../../../examples/pytorch_lightning/tico.py
 
     .. tab:: Lightning Distributed
+
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch_lightning_distributed/tico.ipynb
 
         This example runs on multiple gpus using Distributed Data Parallel (DDP)
         training with Pytorch Lightning. At least one GPU must be available on 

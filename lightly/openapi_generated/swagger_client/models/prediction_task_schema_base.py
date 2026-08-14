@@ -21,21 +21,26 @@ import lightly.openapi_generated.swagger_client.models
 
 
 
-from pydantic import Extra,  BaseModel, Field, StrictStr, constr, validator
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field, StrictStr, constr, validator
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field, StrictStr, constr, validator
 
 class PredictionTaskSchemaBase(BaseModel):
     """
     The schema for predictions or labels when doing classification, object detection, keypoint detection or instance segmentation 
     """
-    name: constr(strict=True, min_length=1) = Field(..., description="A name which is safe to have as a file/folder name in a file system")
+    name: constr(strict=True) = Field(..., description="Since we sometimes stitch together SelectionInputTask+ActiveLearningScoreType, they need to follow the same specs of ActiveLearningScoreType. However, this can be an empty string due to internal logic (no minLength). Also v2config.filespecs.ts has this pattern for predictionTaskJSONSchema as well. ")
     type: StrictStr = Field(..., description="This is the TaskType. Due to openapi.oneOf fuckery with discriminators, this needs to be a string")
     __properties = ["name", "type"]
 
     @validator('name')
     def name_validate_regular_expression(cls, value):
         """Validates the regular expression"""
-        if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9 ._-]+$", value):
-            raise ValueError(r"must validate the regular expression /^[a-zA-Z0-9][a-zA-Z0-9 ._-]+$/")
+        if not re.match(r"^[a-zA-Z0-9_+=,.@:\/-]*$", value):
+            raise ValueError(r"must validate the regular expression /^[a-zA-Z0-9_+=,.@:\/-]*$/")
         return value
 
     class Config:
@@ -43,7 +48,7 @@ class PredictionTaskSchemaBase(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     # JSON field name that stores the object type
     __discriminator_property_name = 'type'

@@ -1,9 +1,8 @@
 from typing import Dict, List, Optional, Tuple
 
-import torchvision.transforms as T
-
 from lightly.transforms.gaussian_blur import GaussianBlur
 from lightly.transforms.multi_view_transform import MultiViewTransform
+from lightly.transforms.torchvision_v2_compatibility import torchvision_transforms as T
 from lightly.transforms.utils import IMAGENET_NORMALIZE
 
 
@@ -42,7 +41,7 @@ class WMSETransform(MultiViewTransform):
         cj_bright:
             How much to jitter brightness.
         cj_contrast:
-            How much to jitter constrast.
+            How much to jitter contrast.
         cj_sat:
             How much to jitter saturation.
         cj_hue:
@@ -93,7 +92,7 @@ class WMSETransform(MultiViewTransform):
                 T.RandomResizedCrop(
                     input_size,
                     scale=(min_scale, 1.0),
-                    interpolation=3,
+                    interpolation=T.InterpolationMode.BICUBIC,
                 ),
                 T.RandomHorizontalFlip(p=hf_prob),
                 GaussianBlur(

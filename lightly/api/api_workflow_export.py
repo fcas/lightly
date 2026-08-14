@@ -35,13 +35,15 @@ class _ExportDatasetMixin:
             >>>
             >>> # Already created some Lightly Worker runs with this dataset
             >>> client.set_dataset_id_by_name("my-dataset")
-            >>> client.export_label_studio_tasks_by_tag_id(tag_id="646f34608a5613b57d8b73cc")
+            >>> client.export_label_studio_tasks_by_tag_id(
+            ...     tag_id="646f34608a5613b57d8b73cc"
+            ... )
             [{'id': 0, 'data': {'image': '...', ...}}]
         """
         label_studio_tasks: List[LabelStudioTask] = list(
             utils.paginate_endpoint(
                 self._tags_api.export_tag_to_label_studio_tasks,
-                page_size=20000,
+                page_size=2500,
                 dataset_id=self.dataset_id,
                 tag_id=tag_id,
             )
@@ -103,7 +105,9 @@ class _ExportDatasetMixin:
             >>>
             >>> # Already created some Lightly Worker runs with this dataset
             >>> client.set_dataset_id_by_name("my-dataset")
-            >>> client.export_label_box_data_rows_by_tag_id(tag_id="646f34608a5613b57d8b73cc")
+            >>> client.export_label_box_data_rows_by_tag_id(
+            ...     tag_id="646f34608a5613b57d8b73cc"
+            ... )
             [{'externalId': '2218961434_7916358f53_z.jpg', 'imageUrl': ...}]
         """
         warnings.warn(
@@ -116,7 +120,7 @@ class _ExportDatasetMixin:
         label_box_data_rows: List[LabelBoxDataRow] = list(
             utils.paginate_endpoint(
                 self._tags_api.export_tag_to_label_box_data_rows,
-                page_size=20000,
+                page_size=2500,
                 dataset_id=self.dataset_id,
                 tag_id=tag_id,
             )
@@ -175,6 +179,7 @@ class _ExportDatasetMixin:
         Args:
             tag_id:
                 ID of the tag which should exported.
+
         Returns:
             A list of dictionaries in a format compatible with Labelbox v4.
 
@@ -183,13 +188,15 @@ class _ExportDatasetMixin:
             >>>
             >>> # Already created some Lightly Worker runs with this dataset
             >>> client.set_dataset_id_by_name("my-dataset")
-            >>> client.export_label_box_v4_data_rows_by_tag_id(tag_id="646f34608a5613b57d8b73cc")
+            >>> client.export_label_box_v4_data_rows_by_tag_id(
+            ...     tag_id="646f34608a5613b57d8b73cc"
+            ... )
             [{'row_data': '...', 'global_key': 'image-1.jpg', 'media_type': 'IMAGE'}
         """
         label_box_data_rows: List[LabelBoxV4DataRow] = list(
             utils.paginate_endpoint(
                 self._tags_api.export_tag_to_label_box_v4_data_rows,
-                page_size=20000,
+                page_size=2500,
                 dataset_id=self.dataset_id,
                 tag_id=tag_id,
             )
@@ -210,8 +217,10 @@ class _ExportDatasetMixin:
         Args:
             tag_name:
                 Name of the tag which should exported.
+
         Returns:
             A list of dictionaries in a format compatible with Labelbox.
+
         Examples:
             >>> # write json file which can be imported in Label Studio
             >>> tasks = client.export_label_box_v4_data_rows_by_tag_name(

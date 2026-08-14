@@ -1,3 +1,6 @@
+# This example requires the following dependencies to be installed:
+# pip install lightly
+
 # Note: The model and training settings do not follow the reference settings
 # from the paper. The settings are chosen such that the example can easily be
 # run on a small dataset with a single GPU.
@@ -91,12 +94,18 @@ class SwaV(pl.LightningModule):
 model = SwaV()
 
 transform = SwaVTransform()
+
+
 # we ignore object detection annotations by setting target_transform to return 0
+def target_transform(t):
+    return 0
+
+
 dataset = torchvision.datasets.VOCDetection(
     "datasets/pascal_voc",
     download=True,
     transform=transform,
-    target_transform=lambda t: 0,
+    target_transform=target_transform,
 )
 # or create a dataset from a folder containing images or videos:
 # dataset = LightlyDataset("path/to/folder")

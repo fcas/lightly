@@ -35,7 +35,7 @@ lightly.cli
 .config.config.yaml
 -------------------
 
-The default settings for all command line tools in the Lightly SSL Python package are stored in a YAML config file.
+The default settings for all command line tools in the Lightly\ **SSL** Python package are stored in a YAML config file.
 The config file is distributed along with the Python package and can be adapted to fit custom requirements.
 
 The arguments are grouped into namespaces. For example, everything related to the embedding model is grouped under
@@ -50,7 +50,7 @@ and empty string so it must be overwritten:
 .. code-block:: bash
 
    # train the default model on my data
-   lightly-train input_dir='path/to/my/data'
+   lightly-ssl-train input_dir='path/to/my/data'
 
 An argument which is grouped under a certain namespace can be accessed by specifying the namespace and the argument,
 separated by a dot. For example the argument "name" in the namespace "model" can be accessed like so:
@@ -58,7 +58,7 @@ separated by a dot. For example the argument "name" in the namespace "model" can
 .. code-block:: bash
 
    # train a ResNet-34 on my data
-   lightly-train input_dir='path/to/my/data' model.name='resnet-34'
+   lightly-ssl-train input_dir='path/to/my/data' model.name='resnet-34'
 
 Additional Arguments
 ^^^^^^^^^^^^^^^^^^^^^
@@ -71,7 +71,7 @@ This can be done by adding a + right before the argument:
 .. code-block:: bash
 
    # train a ResNet-34 with momentum on my data
-   lightly-train input_dir='path/to/my/data' model.name='resnet-34' +optimizer.momentum=0.9
+   lightly-ssl-train input_dir='path/to/my/data' model.name='resnet-34' +optimizer.momentum=0.9
 
 .. _ref-cli-config-default:
 

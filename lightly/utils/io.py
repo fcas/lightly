@@ -1,16 +1,19 @@
-""" I/O operations to save and load embeddings. """
+"""I/O operations to save and load embeddings."""
 
 # Copyright (c) 2020. Lightly AG and its affiliates.
 # All Rights Reserved
+from __future__ import annotations
 
 import csv
 import json
 import re
 from itertools import compress
-from typing import Any, Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
 
 import numpy as np
-from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 def check_embeddings(path: str, remove_additional_columns: bool = False) -> None:
@@ -124,7 +127,6 @@ def save_embeddings(
         >>>     labels,
         >>>     filenames)
     """
-
     n_embeddings = len(embeddings)
     n_filenames = len(filenames)
     n_labels = len(labels)
@@ -252,7 +254,7 @@ class COCO_ANNOTATION_KEYS:
 
 
 def format_custom_metadata(
-    custom_metadata: List[Tuple[str, Any]]
+    custom_metadata: List[Tuple[str, Any]],
 ) -> Dict[str, List[Any]]:
     """Transforms custom metadata into a format which can be handled by Lightly.
 

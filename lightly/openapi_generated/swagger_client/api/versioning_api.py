@@ -16,11 +16,20 @@
 import re  # noqa: F401
 import io
 import warnings
-
-from pydantic import validate_arguments, ValidationError
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import validate_arguments, ValidationError
+except ImportError:
+    # Pydantic v1
+    from pydantic import validate_arguments, ValidationError
 from typing_extensions import Annotated
 
-from pydantic import StrictStr
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import StrictStr
+except ImportError:
+    # Pydantic v1
+    from pydantic import StrictStr
 
 from typing import Optional
 
@@ -47,7 +56,7 @@ class VersioningApi(object):
 
     @validate_arguments
     def get_latest_pip_version(self, current_version : Optional[StrictStr] = None, **kwargs) -> str:  # noqa: E501
-        """get_latest_pip_version  # noqa: E501
+        """Get latest pip version  # noqa: E501
 
         Get latest pip version available  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -76,7 +85,7 @@ class VersioningApi(object):
 
     @validate_arguments
     def get_latest_pip_version_with_http_info(self, current_version : Optional[StrictStr] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """get_latest_pip_version  # noqa: E501
+        """Get latest pip version  # noqa: E501
 
         Get latest pip version available  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -192,7 +201,7 @@ class VersioningApi(object):
 
     @validate_arguments
     def get_minimum_compatible_pip_version(self, **kwargs) -> str:  # noqa: E501
-        """get_minimum_compatible_pip_version  # noqa: E501
+        """Get minimum pip version  # noqa: E501
 
         Get minimum pip version needed for compatability  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
@@ -219,7 +228,7 @@ class VersioningApi(object):
 
     @validate_arguments
     def get_minimum_compatible_pip_version_with_http_info(self, **kwargs) -> ApiResponse:  # noqa: E501
-        """get_minimum_compatible_pip_version  # noqa: E501
+        """Get minimum pip version  # noqa: E501
 
         Get minimum pip version needed for compatability  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an

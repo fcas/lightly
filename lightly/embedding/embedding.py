@@ -1,14 +1,15 @@
-""" Embedding Strategies """
+"""Embedding Strategies"""
 
 # Copyright (c) 2020. Lightly AG and its affiliates.
 # All Rights Reserved
 
+from __future__ import annotations
+
 import time
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import numpy as np
 import torch
-from numpy.typing import NDArray
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
@@ -19,6 +20,9 @@ from lightly.data import LightlyDataset
 from lightly.embedding._base import BaseEmbedding
 from lightly.utils.benchmarking import BenchmarkModule
 from lightly.utils.reordering import sort_items_by_keys
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 class SelfSupervisedEmbedding(BaseEmbedding):
@@ -56,9 +60,9 @@ class SelfSupervisedEmbedding(BaseEmbedding):
         >>>     optimizer,
         >>>     dataloader,
         >>> )
-        >>> # train the self-supervised embedding with default settings
+        >>> # train the self-supervised embedding with default settings
         >>> encoder.train_embedding()
-        >>> # pass pytorch-lightning trainer arguments as kwargs
+        >>> # pass pytorch-lightning trainer arguments as kwargs
         >>> encoder.train_embedding(max_epochs=10)
 
     """
@@ -79,7 +83,7 @@ class SelfSupervisedEmbedding(BaseEmbedding):
         self,
         dataloader: DataLoader[LightlyDataset],
         device: Optional[torch.device] = None,
-    ) -> Tuple[NDArray[np.float_], List[int], List[str]]:
+    ) -> Tuple[NDArray[np.float64], List[int], List[str]]:
         """Embeds images in a vector space.
 
         Args:
@@ -99,13 +103,11 @@ class SelfSupervisedEmbedding(BaseEmbedding):
                 filenames:
                     The filenames from dataloader.dataset.get_filenames().
 
-
         Examples:
             >>> # embed images in vector space
             >>> embeddings, labels, fnames = encoder.embed(dataloader)
 
         """
-
         self.model.eval()
         filenames = []
 
@@ -114,7 +116,7 @@ class SelfSupervisedEmbedding(BaseEmbedding):
         pbar = tqdm(total=len(dataset), unit="imgs")
 
         efficiency = 0.0
-        embeddings: List[NDArray[np.float_]] = []
+        embeddings: List[NDArray[np.float64]] = []
         labels: List[int] = []
         with torch.no_grad():
             start_timepoint = time.time()

@@ -3,14 +3,14 @@
 Self-supervised learning
 ========================
 
-Lightly SSL is a computer vision framework for training deep learning models using self-supervised learning.
+Lightly\ **SSL** is a computer vision framework for training deep learning models using self-supervised learning.
 The framework can be used for a wide range of useful applications such as finding the nearest 
 neighbors, similarity search, transfer learning, or data analytics.
 
 
-How Lightly SSL Works
+How LightlySSL Works
 ---------------------
-The flexible design of Lightly SSL makes it easy to integrate in your Python code. Lightly SSL is built
+The flexible design of Lightly\ **SSL** makes it easy to integrate in your Python code. Lightly\ **SSL** is built
 completely around PyTorch and the different pieces can be put together to fit *your* requirements.
 
 Data and Transformations
@@ -34,6 +34,7 @@ Let's now load an image dataset and create a PyTorch dataloader.
 .. code-block:: python
 
     import torch
+    import lightly.data as data
 
     # Create a dataset from your image folder.
     dataset = data.LightlyDataset(
@@ -219,30 +220,10 @@ Furthermore, the ResNet backbone can be used for transfer and few-shot learning.
     Self-supervised learning does not require labels for a model to be trained on. Lightly,
     however, supports the use of additional labels. For example, if you train a model
     on a folder 'cats' with subfolders 'Maine Coon', 'Bengal' and 'British Shorthair'
-    Lightly SSL automatically returns the enumerated labels as a list.
-
-Lightly SSL in Three Lines
---------------------------
-
-Lightly SSL also offers an easy-to-use interface. The following lines show how the package can 
-be used to train a model with self-supervision and create embeddings with only three lines
-of code.
-
-.. code-block:: python
-
-    from lightly.core import train_embedding_model, embed_images
-
-    # first we train our model for 10 epochs
-    checkpoint = train_embedding_model(input_dir='./my/cute/cats/dataset/', trainer={'max_epochs': 10})
-
-    # let's embed our 'cats' dataset using our trained model
-    embeddings, labels, filenames = embed_images(input_dir='./my/cute/cats/dataset/', checkpoint=checkpoint)
-
-    # now, let's inspect the shape of our embeddings
-    print(embeddings.shape)
+    Lightly\ **SSL** automatically returns the enumerated labels as a list.
 
 
-What's next?
+What's Next?
 ------------
 Get started by :ref:`rst-installing` and follow through the tutorials to 
 learn how to get the most out of using Lightly:

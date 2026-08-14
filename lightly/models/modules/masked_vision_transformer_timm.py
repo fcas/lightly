@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import List, Optional, Tuple, cast
 
 import torch
 import torch.nn as nn
@@ -12,7 +12,7 @@ from lightly.models import utils
 from lightly.models.modules.masked_vision_transformer import MaskedVisionTransformer
 
 
-class MaskedVisionTransformerTIMM(MaskedVisionTransformer, Module):
+class MaskedVisionTransformerTIMM(MaskedVisionTransformer):
     """Masked Vision Transformer class using TIMM.
 
     Attributes:
@@ -20,6 +20,15 @@ class MaskedVisionTransformerTIMM(MaskedVisionTransformer, Module):
             The VisionTransformer object of TIMM.
         mask_token:
             The mask token.
+        weight_initialization:
+            The weight initialization method. Valid options are ['', 'skip']. '' uses
+            the default MAE weight initialization and 'skip' skips the weight
+            initialization.
+        antialias:
+            Whether to use antialiasing when resampling the positional embeddings.
+        pos_embed_initialization:
+            The strategy to initialize the positional embeddings. Valid options are
+            ['learn', 'sincos', 'skip'].
 
     """
 
@@ -27,6 +36,9 @@ class MaskedVisionTransformerTIMM(MaskedVisionTransformer, Module):
         self,
         vit: VisionTransformer,
         mask_token: Optional[Parameter] = None,
+        weight_initialization: str = "",
+        antialias: bool = True,
+        pos_embed_initialization: str = "sincos",
     ) -> None:
         super().__init__()
         self.vit = vit
@@ -35,7 +47,22 @@ class MaskedVisionTransformerTIMM(MaskedVisionTransformer, Module):
             if mask_token is not None
             else Parameter(torch.zeros(1, 1, self.vit.embed_dim))
         )
-        self._initialize_weights()
+
+        if weight_initialization not in ("", "skip"):
+            raise ValueError(
+                f"Invalid weight initialization method: '{weight_initialization}'. "
+                "Valid options are: ['', 'skip']."
+            )
+        if weight_initialization != "skip":
+            self._initialize_weights()
+
+        utils.initialize_positional_embedding(
+            pos_embedding=self.vit.pos_embed,
+            strategy=pos_embed_initialization,
+            num_prefix_tokens=self.vit.num_prefix_tokens,
+        )
+
+        self.antialias = antialias
 
     @property
     def sequence_length(self) -> int:
@@ -47,108 +74,73 @@ class MaskedVisionTransformerTIMM(MaskedVisionTransformer, Module):
         images: Tensor,
         idx_mask: Optional[Tensor] = None,
         idx_keep: Optional[Tensor] = None,
+        mask: Optional[Tensor] = None,
     ) -> Tensor:
-        """Returns encoded class tokens from a batch of images.
+        x = self.encode(images, idx_mask=idx_mask, idx_keep=idx_keep, mask=mask)
+        attn_pool = getattr(self.vit, "attn_pool", None)
+        if attn_pool is not None:
+            x = attn_pool(x)
+            return x
 
-        Args:
-            images:
-                Tensor with shape (batch_size, channels, image_size, image_size).
-            idx_mask:
-                Tensor with shape (batch_size, num_tokens_to_mask) where each
-                entry is an index of the token to mask in the respective batch.
-                If specified, the indexed tokens are masked with self.mask_token.
-            idx_keep:
-                Tensor with shape (batch_size, num_tokens_to_keep) where each
-                entry is an index of the token to keep in the respective batch.
-                If specified, only the indexed tokens will be passed to the
-                encoder.
-
-        Returns:
-            Tensor with shape (batch_size, vit.embed_dim) containing the
-            encoded class token for every image.
-
-        """
-        x = self.encode(images, idx_mask=idx_mask, idx_keep=idx_keep)
-        if self.vit.attn_pool is not None:
-            x = self.vit.attn_pool(x)
-        elif self.vit.global_pool == "avg":
+        global_pool = cast(str, getattr(self.vit, "global_pool", ""))
+        if global_pool == "avg":
             x = x[:, self.vit.num_prefix_tokens :].mean(dim=1)
-        elif self.vit.global_pool:
+        elif global_pool:
             x = x[:, 0]  # class token
         return x
+
+    def forward_intermediates(
+        self,
+        images: Tensor,
+        idx_mask: Optional[Tensor] = None,
+        idx_keep: Optional[Tensor] = None,
+        norm: bool = False,
+        mask: Optional[Tensor] = None,
+    ) -> Tuple[Tensor, List[Tensor]]:
+        # preprocess images, convert to tokens and add positional embeddings
+        tokens = self.preprocess(
+            images=images, idx_mask=idx_mask, idx_keep=idx_keep, mask=mask
+        )
+        # normalization layer
+        tokens = self.vit.norm_pre(tokens)
+
+        intermediates: List[Tensor] = []
+        for blk in self.vit.blocks:
+            tokens = blk(tokens)
+            intermediates.append(self.vit.norm(tokens) if norm else tokens)
+
+        # normalize
+        out: Tensor = self.vit.norm(tokens)
+
+        return out, intermediates
 
     def encode(
         self,
         images: Tensor,
         idx_mask: Optional[Tensor] = None,
         idx_keep: Optional[Tensor] = None,
+        mask: Optional[Tensor] = None,
     ) -> Tensor:
-        """Encode input images.
-
-        Args:
-            input:
-                Batch of input images.
-            idx_mask:
-                Tensor with shape (batch_size, num_tokens_to_mask) where each
-                entry is an index of the token to mask in the respective batch.
-                If specified, the indexed tokens are masked with self.mask_token.
-            idx_keep:
-                Tensor with shape (batch_size, num_tokens_to_keep) where each
-                entry is an index of the token to keep in the respective batch.
-                If specified, only the indexed tokens will be encoded.
-
-        Returns:
-            Batch of encoded output tokens.
-        """
-        # convert images to tokens
-        input = self.images_to_tokens(images)
-        # add prefix tokens if needed
-        input = self.add_prefix_tokens(input)
-
-        if idx_mask is not None:
-            input = utils.mask_at_index(input, idx_mask, self.mask_token)
-        # add positional encoding
-        input = self.add_pos_embed(input)
-
-        if idx_keep is not None:
-            input = utils.get_at_index(input, idx_keep)
+        # preprocess images, convert to tokens and add positional embeddings
+        tokens: Tensor = self.preprocess(
+            images=images, idx_mask=idx_mask, idx_keep=idx_keep, mask=mask
+        )
         # normalization layer
-        input = self.vit.norm_pre(input)
+        tokens = self.vit.norm_pre(tokens)
         # apply Transformer blocks
-        input = self.vit.blocks(input)
+        tokens = self.vit.blocks(tokens)
         # normalize
-        out: Tensor = self.vit.norm(input)
-        return out
+        tokens = self.vit.norm(tokens)
+        return tokens
 
     def images_to_tokens(self, images: Tensor) -> Tensor:
-        """Converts images into patch tokens.
-
-        Args:
-            images:
-                Tensor with shape (batch_size, channels, image_size, image_size).
-
-        Returns:
-            Tensor with shape (batch_size, vit.patch_embed.num_patches, vit.embed_dim)
-            containing the patch tokens (excluding prefix tokens).
-        """
         tokens: Tensor = self.vit.patch_embed(images)
         if self.vit.dynamic_img_size:
             tokens = tokens.permute(0, 3, 1, 2)  # NHWC -> NCHW
             tokens = tokens.flatten(2).transpose(1, 2)  # NCHW -> NLC
         return tokens
 
-    def add_prefix_tokens(self, x: Tensor) -> Tensor:
-        """Adds prefix tokens to image patch tokens.
-
-        Args:
-            x:
-                Tensor with shape (batch_size, vit.patch_embed.num_patches, vit.embed_dim)
-                containing the image patch tokens
-
-        Returns:
-            Tensor with shape (batch_size, self.sequence_length, vit.embed_dim) containing
-            the image patch tokens and prefix tokens.
-        """
+    def prepend_prefix_tokens(self, x: Tensor) -> Tensor:
         prefix_tokens = []
         if self.vit.cls_token is not None:
             prefix_tokens.append(self.vit.cls_token.expand(x.shape[0], -1, -1))
@@ -159,17 +151,6 @@ class MaskedVisionTransformerTIMM(MaskedVisionTransformer, Module):
         return x
 
     def add_pos_embed(self, x: Tensor) -> Tensor:
-        """Adds positional embeddings to the input tensor based on the Vision Transformer
-        (ViT) architecture in vit.
-
-        Args:
-            x:
-                Input tensor with shape (batch_size, self.sequence_length, vit.embed_dim).
-
-        Returns:
-            Tensor after adding positional embeddings, with the same shape as the input.
-        """
-
         x_prefix = x[:, : self.vit.num_prefix_tokens, :]
         x = x[:, self.vit.num_prefix_tokens :, :]
         if self.vit.dynamic_img_size:
@@ -194,6 +175,7 @@ class MaskedVisionTransformerTIMM(MaskedVisionTransformer, Module):
                 num_prefix_tokens=(
                     0 if self.vit.no_embed_class else self.vit.num_prefix_tokens
                 ),
+                antialias=self.antialias,
             )
             x = x.view(B, -1, C)
         else:
@@ -217,17 +199,15 @@ class MaskedVisionTransformerTIMM(MaskedVisionTransformer, Module):
         torch.nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
 
         # Initialize the class token.
-        torch.nn.init.normal_(self.vit.cls_token, std=0.02)
+        if self.vit.has_class_token:
+            if self.vit.cls_token is not None:
+                torch.nn.init.normal_(self.vit.cls_token, std=0.02)
 
         # initialize nn.Linear and nn.LayerNorm
-        self.apply(_init_weights)
-
-        utils.initialize_2d_sine_cosine_positional_embedding(
-            pos_embedding=self.vit.pos_embed, has_class_token=self.vit.has_class_token
-        )
+        self.apply(init_weights)
 
 
-def _init_weights(module: Module) -> None:
+def init_weights(module: Module) -> None:
     if isinstance(module, Linear):
         nn.init.xavier_uniform_(module.weight)
         if isinstance(module, Linear) and module.bias is not None:

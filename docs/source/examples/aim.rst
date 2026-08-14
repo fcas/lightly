@@ -9,7 +9,7 @@ architecture. It learns image representations by predicting pixel values for ima
 patches based on previous patches in the image. This is similar to the next word prediction
 task in natural language processing. AIM demonstrates that it is possible to train
 large-scale vision models using an autoregressive objective. The model is split into
-and encoder and a decoder part. The encoder generates features for image patches and
+an encoder and a decoder part. The encoder generates features for image patches and
 the decoder predicts pixel values based on the features.
 
 Reference:
@@ -19,6 +19,9 @@ Reference:
 .. tabs::
     .. tab:: PyTorch
 
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch/aim.ipynb
+
         This example can be run from the command line with::
 
             python lightly/examples/pytorch/aim.py
@@ -27,6 +30,9 @@ Reference:
 
     .. tab:: Lightning
 
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch_lightning/aim.ipynb
+
         This example can be run from the command line with::
 
             python lightly/examples/pytorch_lightning/aim.py
@@ -34,6 +40,9 @@ Reference:
         .. literalinclude:: ../../../examples/pytorch_lightning/aim.py
 
     .. tab:: Lightning Distributed
+
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch_lightning_distributed/aim.ipynb
 
         This example runs on multiple gpus using Distributed Data Parallel (DDP)
         training with Pytorch Lightning. At least one GPU must be available on 

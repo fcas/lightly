@@ -1,29 +1,29 @@
+default_install_hook_types: [pre-commit, pre-push] # install both git hooks (mypy runs on pre-push)
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v2.3.0
+  rev: v4.6.0
   hooks:
   - id: detect-private-key      # check for private keys
   - id: check-added-large-files # prevent commit of files >500kB
     args: ['--maxkb=500']
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.4.2
+  hooks:
+  - id: codespell
+    additional_dependencies: [tomli]
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.12.7
+  hooks:
+    - id: ruff-check
+      args: [--fix]
+    - id: ruff-format
 - repo: local
   hooks:
-  - id: pytest-check                     # run all tests
-    name: pytest-check
-    entry: make test
+  - id: mypy
+    name: mypy
+    entry: mypy
     language: system
+    types: [python]
     pass_filenames: false
-    stages: [push]
-    # Avoid running tests if non-tested files have changed.
-    # The regex follows the pattern in the docs: https://pre-commit.com/#regular-expressions
-    exclude: |
-      (?x)^(
-          benchmark_logs/.*|
-          docs/.*|
-          examples/.*|
-          \.gitignore|
-          CONTRIBUTING\.md|
-          DOCS\.md|
-          LICENSE\.txt|
-          PRECOMMITHOOKS\.md|
-          README\.md
-      )$
+    stages: [pre-push] # a full mypy run is too slow for every commit
+    args: [lightly, tests]

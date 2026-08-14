@@ -16,6 +16,9 @@ Reference:
 .. tabs::
     .. tab:: PyTorch
 
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch/smog.ipynb
+
         This example can be run from the command line with::
 
             python lightly/examples/pytorch/smog.py
@@ -23,6 +26,9 @@ Reference:
         .. literalinclude:: ../../../examples/pytorch/smog.py
 
     .. tab:: Lightning
+
+        .. image:: https://img.shields.io/badge/Open%20in%20Colab-blue?logo=googlecolab&label=%20&labelColor=5c5c5c
+            :target: https://colab.research.google.com/github/lightly-ai/lightly/blob/master/examples/notebooks/pytorch_lightning/smog.ipynb
 
         This example can be run from the command line with::
 

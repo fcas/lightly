@@ -20,7 +20,12 @@ import json
 
 
 from typing import Any, Dict, Union
-from pydantic import Extra,  BaseModel, Field, confloat, conint
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field, confloat, conint
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field, confloat, conint
 from lightly.openapi_generated.swagger_client.models.tag_change_data_operation_method import TagChangeDataOperationMethod
 
 class TagChangeDataMetadata(BaseModel):
@@ -39,7 +44,7 @@ class TagChangeDataMetadata(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     def to_str(self, by_alias: bool = False) -> str:
         """Returns the string representation of the model"""

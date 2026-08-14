@@ -20,7 +20,12 @@ import json
 
 
 
-from pydantic import Extra,  BaseModel, Field, conint, constr, validator
+try:
+    # Pydantic >=v1.10.17
+    from pydantic.v1 import BaseModel, Field, conint, constr, validator
+except ImportError:
+    # Pydantic v1
+    from pydantic import BaseModel, Field, conint, constr, validator
 
 class ActiveLearningScoreTypesV2Data(BaseModel):
     """
@@ -29,7 +34,7 @@ class ActiveLearningScoreTypesV2Data(BaseModel):
     id: constr(strict=True) = Field(..., description="MongoDB ObjectId")
     dataset_id: constr(strict=True) = Field(..., alias="datasetId", description="MongoDB ObjectId")
     prediction_uuid_timestamp: conint(strict=True, ge=0) = Field(..., alias="predictionUUIDTimestamp", description="unix timestamp in milliseconds")
-    task_name: constr(strict=True, min_length=1) = Field(..., alias="taskName", description="A name which is safe to have as a file/folder name in a file system")
+    task_name: constr(strict=True) = Field(..., alias="taskName", description="Since we sometimes stitch together SelectionInputTask+ActiveLearningScoreType, they need to follow the same specs of ActiveLearningScoreType. However, this can be an empty string due to internal logic (no minLength). Also v2config.filespecs.ts has this pattern for predictionTaskJSONSchema as well. ")
     score_type: constr(strict=True, min_length=1) = Field(..., alias="scoreType", description="Type of active learning score")
     created_at: conint(strict=True, ge=0) = Field(..., alias="createdAt", description="unix timestamp in milliseconds")
     __properties = ["id", "datasetId", "predictionUUIDTimestamp", "taskName", "scoreType", "createdAt"]
@@ -51,8 +56,8 @@ class ActiveLearningScoreTypesV2Data(BaseModel):
     @validator('task_name')
     def task_name_validate_regular_expression(cls, value):
         """Validates the regular expression"""
-        if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9 ._-]+$", value):
-            raise ValueError(r"must validate the regular expression /^[a-zA-Z0-9][a-zA-Z0-9 ._-]+$/")
+        if not re.match(r"^[a-zA-Z0-9_+=,.@:\/-]*$", value):
+            raise ValueError(r"must validate the regular expression /^[a-zA-Z0-9_+=,.@:\/-]*$/")
         return value
 
     @validator('score_type')
@@ -67,7 +72,7 @@ class ActiveLearningScoreTypesV2Data(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
         use_enum_values = True
-        extra = Extra.forbid
+        extra = "forbid"
 
     def to_str(self, by_alias: bool = False) -> str:
         """Returns the string representation of the model"""
